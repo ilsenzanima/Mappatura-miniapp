@@ -606,7 +606,8 @@
                     });
                 }
                 
-                // La prima riga attraversamenti viene aggiunta nell'inizializzazione
+                // Ripopola tutti i select di attraversamento esistenti
+                repopulateAttraversamentoSelects();
                 
                 hideLoading();
                 showMessage('Dati caricati con successo', 'success', 3000);
@@ -634,7 +635,13 @@
                 
                 // Ripopola i select con i dati di fallback
                 populateSelectsWithFallbackData();
-                addAttraversamentoRow(true);
+                repopulateAttraversamentoSelects();
+                
+                // Aggiungi prima riga solo se non esistono già
+                const existingRows = document.querySelectorAll('.attraversamento-row');
+                if (existingRows.length === 0) {
+                    addAttraversamentoRow(true);
+                }
             }
         }
         
@@ -689,6 +696,32 @@
                     this.setAttribute('data-selected', this.value ? 'true' : 'false');
                 });
             }
+        }
+        
+        /**
+         * Ripopola tutti i select di attraversamento esistenti
+         */
+        function repopulateAttraversamentoSelects() {
+            const esistingSelects = document.querySelectorAll('.attraversamento-select');
+            esistingSelects.forEach(select => {
+                // Salva il valore corrente
+                const currentValue = select.value;
+                
+                // Ripopola le opzioni
+                select.innerHTML = '<option value="">Seleziona...</option>';
+                opzioniAttraversamenti.forEach(item => {
+                    const option = new Option(item, item);
+                    select.add(option);
+                });
+                
+                // Ripristina il valore se ancora valido
+                if (currentValue && opzioniAttraversamenti.includes(currentValue)) {
+                    select.value = currentValue;
+                    select.setAttribute('data-selected', 'true');
+                } else {
+                    select.setAttribute('data-selected', 'false');
+                }
+            });
         }
         
         /**
@@ -1184,7 +1217,7 @@
                  // Aggiungi riga attraversamento solo se non ce ne sono già
                  const existingRows = document.querySelectorAll('.attraversamento-row');
                  if (existingRows.length === 0) {
-                     addAttraversamentoRow();
+                     addAttraversamentoRow(true);
                  }
                  
                  manageFocus();
