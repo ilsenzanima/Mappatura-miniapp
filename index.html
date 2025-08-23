@@ -172,6 +172,16 @@
         .skip-link:focus {
             top: 6px;
         }
+        
+        /* Stili per select con selezione attiva */
+        select[data-selected="true"] {
+            border-color: var(--tg-button);
+            background-color: rgba(var(--tg-button-rgb, 0, 136, 204), 0.1);
+        }
+        
+        select[data-selected="false"] {
+            border-color: #ddd;
+        }
     </style>
 </head>
 <body>
@@ -555,6 +565,12 @@
                     const option = new Option(item, item);
                     pianoSelect.add(option);
                 });
+                
+                // Aggiungi event listener per piano select
+                pianoSelect.addEventListener('change', function() {
+                    clearFieldError(this);
+                    this.setAttribute('data-selected', this.value ? 'true' : 'false');
+                });
 
                 // Popola dropdown supporti
                 const supportoSelect = document.getElementById('supporto-select');
@@ -562,6 +578,12 @@
                 opzioniSupporti.forEach(item => {
                     const option = new Option(item, item);
                     supportoSelect.add(option);
+                });
+                
+                // Aggiungi event listener per supporto select
+                supportoSelect.addEventListener('change', function() {
+                    clearFieldError(this);
+                    this.setAttribute('data-selected', this.value ? 'true' : 'false');
                 });
                 
                 // La prima riga attraversamenti viene aggiunta nell'inizializzazione
@@ -636,6 +658,18 @@
             // Aggiungi event listeners per validazione in tempo reale
             const quantitaInput = newRow.querySelector('.quantita-input');
             const dimensioniInput = newRow.querySelector('.dimensioni-diametro-input');
+
+            // Event listener per il select attraversamento
+            newSelect.addEventListener('change', function() {
+                clearFieldError(this);
+                // Aggiorna visivamente la selezione
+                this.setAttribute('data-selected', this.value ? 'true' : 'false');
+                
+                // Se viene selezionato un attraversamento, assicurati che la quantità sia almeno 1
+                if (this.value && !quantitaInput.value) {
+                    quantitaInput.value = '1';
+                }
+            });
 
             quantitaInput.addEventListener('input', function() {
                 clearFieldError(this);
