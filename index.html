@@ -192,7 +192,13 @@
     <form id="main-form" role="main" aria-label="Form per l'invio del report di intervento">
         <div class="form-group">
             <label for="photo">Allega Foto</label>
-            <input type="file" id="photo" name="photo" accept="image/*" required>
+            <div class="photo-input-container" style="display: flex; gap: 10px; align-items: center;">
+                <input type="file" id="photo" name="photo" accept="image/*" capture="environment" required style="flex: 1;">
+                <button type="button" id="camera-btn" class="action-btn" style="background-color: var(--tg-button); color: var(--tg-button-text); width: auto; padding: 8px 12px; font-size: 14px; margin-bottom: 0;" title="Scatta foto con fotocamera">
+                    📷
+                </button>
+            </div>
+            <small style="color: var(--tg-hint); font-size: 12px; margin-top: 5px; display: block;">Su mobile: usa il pulsante 📷 per accedere alla fotocamera</small>
         </div>
 
         <div class="form-row">
@@ -849,6 +855,34 @@
                 }
             }
         });
+
+        // Gestione pulsante fotocamera per Telegram WebApp
+        document.getElementById('camera-btn').addEventListener('click', function() {
+            if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                // Usa le API di Telegram WebApp per accedere alla fotocamera
+                try {
+                    // Metodo 1: Prova a usare requestWriteAccess per attivare permessi
+                    if (tg.requestWriteAccess) {
+                        tg.requestWriteAccess();
+                    }
+                    
+                    // Metodo 2: Simula click sull'input file per attivare la fotocamera
+                    const photoInput = document.getElementById('photo');
+                    photoInput.setAttribute('capture', 'environment'); // Fotocamera posteriore
+                    photoInput.click();
+                    
+                    showMessage('Tocca "Fotocamera" nella finestra che si apre', 'info', 3000);
+                } catch (error) {
+                    console.error('Errore accesso fotocamera:', error);
+                    showMessage('Errore nell\'accesso alla fotocamera. Usa il pulsante "Scegli file"', 'error', 5000);
+                }
+            } else {
+                // Fallback per browser normale
+                const photoInput = document.getElementById('photo');
+                photoInput.setAttribute('capture', 'environment');
+                photoInput.click();
+            }
+        })
 
         /**
          * Converte un file in Base64
