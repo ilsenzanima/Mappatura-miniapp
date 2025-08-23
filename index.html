@@ -193,12 +193,12 @@
         <div class="form-group">
             <label for="photo">Allega Foto</label>
             <div class="photo-input-container" style="display: flex; gap: 10px; align-items: center;">
-                <input type="file" id="photo" name="photo" accept="image/*" required style="flex: 1;">
+                <input type="file" id="photo" name="photo" accept="image/*" capture="environment" required style="flex: 1;">
                 <button type="button" id="camera-btn" class="action-btn" style="background-color: var(--tg-button); color: var(--tg-button-text); width: auto; padding: 8px 12px; font-size: 14px; margin-bottom: 0;" title="Scatta foto con fotocamera">
                     📷
                 </button>
             </div>
-            <small style="color: var(--tg-hint); font-size: 12px; margin-top: 5px; display: block;">📁 "Scegli file" = seleziona da galleria | 📷 "Fotocamera" = scatta nuova foto</small>
+            <small style="color: var(--tg-hint); font-size: 12px; margin-top: 5px; display: block;">📁 "Scegli file" = scatta nuova foto | 📷 "Fotocamera" = seleziona da galleria</small>
         </div>
 
         <div class="form-row">
@@ -861,35 +861,30 @@
             const photoInput = document.getElementById('photo');
             
             if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-                // Telegram WebApp ha limitazioni specifiche per la fotocamera
+                // Telegram WebApp - apre galleria
                 try {
-                    // Rimuovi attributo capture temporaneamente per Telegram
+                    // Rimuovi attributo capture per aprire galleria
                     photoInput.removeAttribute('capture');
                     
-                    // Forza il tipo di input per mobile
+                    // Forza il tipo di input per galleria
                     photoInput.setAttribute('accept', 'image/*');
                     
-                    // Simula click per aprire il selettore file nativo
+                    // Simula click per aprire la galleria
                     photoInput.click();
                     
-                    // Messaggio specifico per Telegram
-                    showMessage('Seleziona "Fotocamera" dal menu che si apre per scattare una nuova foto', 'info', 4000);
-                    
-                    // Ripristina capture dopo un breve delay
-                    setTimeout(() => {
-                        photoInput.setAttribute('capture', 'environment');
-                    }, 1000);
+                    // Messaggio per galleria
+                    showMessage('Seleziona una foto dalla galleria', 'info', 3000);
                     
                 } catch (error) {
-                    console.error('Errore accesso fotocamera in Telegram:', error);
-                    showMessage('Usa il pulsante "Scegli file" per selezionare o scattare una foto', 'error', 5000);
+                    console.error('Errore accesso galleria in Telegram:', error);
+                    showMessage('Errore nell\'apertura della galleria', 'error', 5000);
                 }
             } else {
-                // Comportamento normale per browser web - crea un input temporaneo per fotocamera
+                // Comportamento normale per browser web - crea un input temporaneo per galleria
                 const tempInput = document.createElement('input');
                 tempInput.type = 'file';
                 tempInput.accept = 'image/*';
-                tempInput.capture = 'environment';
+                // NON impostare capture per aprire galleria
                 tempInput.style.display = 'none';
                 
                 tempInput.addEventListener('change', function(e) {
@@ -907,7 +902,7 @@
                 
                 document.body.appendChild(tempInput);
                 tempInput.click();
-                showMessage('Fotocamera in apertura...', 'info', 2000);
+                showMessage('Galleria in apertura...', 'info', 2000);
             }
         })
 
