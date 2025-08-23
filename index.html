@@ -560,31 +560,51 @@
 
                 // Popola dropdown piani
                 const pianoSelect = document.getElementById('piano-select');
-                pianoSelect.innerHTML = '<option value="">Seleziona Piano</option>';
-                opzioniPiani.forEach(item => {
-                    const option = new Option(item, item);
-                    pianoSelect.add(option);
-                });
-                
-                // Aggiungi event listener per piano select
-                pianoSelect.addEventListener('change', function() {
-                    clearFieldError(this);
-                    this.setAttribute('data-selected', this.value ? 'true' : 'false');
-                });
+                if (pianoSelect) {
+                    // Rimuovi event listener esistenti clonando l'elemento
+                    const newPianoSelect = pianoSelect.cloneNode(false);
+                    // Preserva tutti gli attributi originali
+                    Array.from(pianoSelect.attributes).forEach(attr => {
+                        newPianoSelect.setAttribute(attr.name, attr.value);
+                    });
+                    pianoSelect.parentNode.replaceChild(newPianoSelect, pianoSelect);
+                    
+                    newPianoSelect.innerHTML = '<option value="">Seleziona Piano</option>';
+                    opzioniPiani.forEach(item => {
+                        const option = new Option(item, item);
+                        newPianoSelect.add(option);
+                    });
+                    
+                    // Aggiungi event listener per piano select
+                    newPianoSelect.addEventListener('change', function() {
+                        clearFieldError(this);
+                        this.setAttribute('data-selected', this.value ? 'true' : 'false');
+                    });
+                }
 
                 // Popola dropdown supporti
                 const supportoSelect = document.getElementById('supporto-select');
-                supportoSelect.innerHTML = '<option value="">Seleziona Supporto</option>';
-                opzioniSupporti.forEach(item => {
-                    const option = new Option(item, item);
-                    supportoSelect.add(option);
-                });
-                
-                // Aggiungi event listener per supporto select
-                supportoSelect.addEventListener('change', function() {
-                    clearFieldError(this);
-                    this.setAttribute('data-selected', this.value ? 'true' : 'false');
-                });
+                if (supportoSelect) {
+                    // Rimuovi event listener esistenti clonando l'elemento
+                    const newSupportoSelect = supportoSelect.cloneNode(false);
+                    // Preserva tutti gli attributi originali
+                    Array.from(supportoSelect.attributes).forEach(attr => {
+                        newSupportoSelect.setAttribute(attr.name, attr.value);
+                    });
+                    supportoSelect.parentNode.replaceChild(newSupportoSelect, supportoSelect);
+                    
+                    newSupportoSelect.innerHTML = '<option value="">Seleziona Supporto</option>';
+                    opzioniSupporti.forEach(item => {
+                        const option = new Option(item, item);
+                        newSupportoSelect.add(option);
+                    });
+                    
+                    // Aggiungi event listener per supporto select
+                    newSupportoSelect.addEventListener('change', function() {
+                        clearFieldError(this);
+                        this.setAttribute('data-selected', this.value ? 'true' : 'false');
+                    });
+                }
                 
                 // La prima riga attraversamenti viene aggiunta nell'inizializzazione
                 
@@ -612,7 +632,62 @@
                     opzioniAttraversamenti = ['Attraversamento 1', 'Attraversamento 2']; // Fallback
                 }
                 
+                // Ripopola i select con i dati di fallback
+                populateSelectsWithFallbackData();
                 addAttraversamentoRow(true);
+            }
+        }
+        
+        /**
+         * Popola i select con i dati di fallback disponibili
+         */
+        function populateSelectsWithFallbackData() {
+            // Popola dropdown piani
+            const pianoSelect = document.getElementById('piano-select');
+            if (pianoSelect && opzioniPiani.length > 0) {
+                // Rimuovi event listener esistenti clonando l'elemento
+                const newPianoSelect = pianoSelect.cloneNode(false);
+                // Preserva tutti gli attributi originali
+                Array.from(pianoSelect.attributes).forEach(attr => {
+                    newPianoSelect.setAttribute(attr.name, attr.value);
+                });
+                pianoSelect.parentNode.replaceChild(newPianoSelect, pianoSelect);
+                
+                newPianoSelect.innerHTML = '<option value="">Seleziona Piano</option>';
+                opzioniPiani.forEach(item => {
+                    const option = new Option(item, item);
+                    newPianoSelect.add(option);
+                });
+                
+                // Aggiungi event listener per piano select
+                newPianoSelect.addEventListener('change', function() {
+                    clearFieldError(this);
+                    this.setAttribute('data-selected', this.value ? 'true' : 'false');
+                });
+            }
+
+            // Popola dropdown supporti
+            const supportoSelect = document.getElementById('supporto-select');
+            if (supportoSelect && opzioniSupporti.length > 0) {
+                // Rimuovi event listener esistenti clonando l'elemento
+                const newSupportoSelect = supportoSelect.cloneNode(false);
+                // Preserva tutti gli attributi originali
+                Array.from(supportoSelect.attributes).forEach(attr => {
+                    newSupportoSelect.setAttribute(attr.name, attr.value);
+                });
+                supportoSelect.parentNode.replaceChild(newSupportoSelect, supportoSelect);
+                
+                newSupportoSelect.innerHTML = '<option value="">Seleziona Supporto</option>';
+                opzioniSupporti.forEach(item => {
+                    const option = new Option(item, item);
+                    newSupportoSelect.add(option);
+                });
+                
+                // Aggiungi event listener per supporto select
+                newSupportoSelect.addEventListener('change', function() {
+                    clearFieldError(this);
+                    this.setAttribute('data-selected', this.value ? 'true' : 'false');
+                });
             }
         }
         
