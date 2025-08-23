@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report Lavoro</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
     <style>
         :root {
             --tg-bg: var(--tg-theme-bg-color, #ffffff);
@@ -259,8 +259,8 @@
         const RETRY_DELAY_MS = 1000;
         // --------------------
 
-        const tg = window.Telegram.WebApp;
-        tg.ready();
+
+        
 
         const form = document.getElementById('main-form');
         const submitBtn = document.getElementById('submit-btn');
@@ -856,54 +856,32 @@
             }
         });
 
-        // Gestione pulsante fotocamera per Telegram WebApp
+        // Gestione pulsante fotocamera
         document.getElementById('camera-btn').addEventListener('click', function() {
             const photoInput = document.getElementById('photo');
             
-            if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-                // Telegram WebApp - apre galleria
-                try {
-                    // Rimuovi attributo capture per aprire galleria
-                    photoInput.removeAttribute('capture');
+            // Crea un input temporaneo per galleria (senza capture)
+            const tempInput = document.createElement('input');
+            tempInput.type = 'file';
+            tempInput.accept = 'image/*';
+            tempInput.style.display = 'none';
+            
+            tempInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    // Trasferisci il file all'input principale
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(e.target.files[0]);
+                    photoInput.files = dataTransfer.files;
                     
-                    // Forza il tipo di input per galleria
-                    photoInput.setAttribute('accept', 'image/*');
-                    
-                    // Simula click per aprire la galleria
-                    photoInput.click();
-                    
-                    // Messaggio per galleria
-                    showMessage('Seleziona una foto dalla galleria', 'info', 3000);
-                    
-                } catch (error) {
-                    console.error('Errore accesso galleria in Telegram:', error);
-                    showMessage('Errore nell\'apertura della galleria', 'error', 5000);
+                    // Trigger change event sull'input principale
+                    photoInput.dispatchEvent(new Event('change', { bubbles: true }));
                 }
-            } else {
-                // Comportamento normale per browser web - crea un input temporaneo per galleria
-                const tempInput = document.createElement('input');
-                tempInput.type = 'file';
-                tempInput.accept = 'image/*';
-                // NON impostare capture per aprire galleria
-                tempInput.style.display = 'none';
-                
-                tempInput.addEventListener('change', function(e) {
-                    if (e.target.files && e.target.files[0]) {
-                        // Trasferisci il file all'input principale
-                        const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(e.target.files[0]);
-                        photoInput.files = dataTransfer.files;
-                        
-                        // Trigger change event sull'input principale
-                        photoInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                    document.body.removeChild(tempInput);
-                });
-                
-                document.body.appendChild(tempInput);
-                tempInput.click();
-                showMessage('Galleria in apertura...', 'info', 2000);
-            }
+                document.body.removeChild(tempInput);
+            });
+            
+            document.body.appendChild(tempInput);
+            tempInput.click();
+            showMessage('Galleria in apertura...', 'info', 2000);
         })
 
         /**
@@ -1123,7 +1101,7 @@
                         dimensioniCm: dimensioniCm || null,
                         attraversamenti: attraversamentiData,
                         notes: notes || null,
-                        telegramUser: tg.initDataUnsafe?.user || null,
+                        telegramUser: null,
                         timestamp: new Date().toISOString()
                     };
 
@@ -1135,9 +1113,7 @@
                     
                     // Chiudi app dopo successo
                     setTimeout(() => {
-                        if (tg.close) {
-                            tg.close();
-                        }
+                        // App completata con successo
                     }, 2000);
 
                 } catch (error) {
@@ -1256,23 +1232,7 @@
          */
         function initializeApp() {
             try {
-                // Configura input foto in base all'ambiente
-                const photoInput = document.getElementById('photo');
-                if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-                    // Telegram WebApp - non usare capture di default
-                    tg.ready();
-                    tg.expand();
-                    
-                    // Configura tema
-                    document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
-                    document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
-                    document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#0088cc');
-                    
-                    console.log('Telegram WebApp rilevato - configurazione fotocamera ottimizzata');
-                } else {
-                    // Browser web normale - capture sarà impostato solo dal pulsante fotocamera
-                    console.log('Browser web rilevato - input file per selezione, pulsante per fotocamera');
-                }
+                console.log('Inizializzazione app per browser web');
 
                 // Inizializza componenti
                  populateDropdowns();
