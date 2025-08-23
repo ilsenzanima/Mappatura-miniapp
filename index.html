@@ -198,7 +198,7 @@
                     📷
                 </button>
             </div>
-            <small style="color: var(--tg-hint); font-size: 12px; margin-top: 5px; display: block;">📱 Su Telegram: clicca 📷 e seleziona "Fotocamera" dal menu | 🌐 Su web: clicca 📷 per fotocamera diretta</small>
+            <small style="color: var(--tg-hint); font-size: 12px; margin-top: 5px; display: block;">📁 "Scegli file" = seleziona da galleria | 📷 "Fotocamera" = scatta nuova foto</small>
         </div>
 
         <div class="form-row">
@@ -885,10 +885,11 @@
                     showMessage('Usa il pulsante "Scegli file" per selezionare o scattare una foto', 'error', 5000);
                 }
             } else {
-                // Comportamento normale per browser web
+                // Comportamento normale per browser web - imposta capture prima del click
                 photoInput.setAttribute('capture', 'environment');
+                photoInput.setAttribute('accept', 'image/*');
                 photoInput.click();
-                showMessage('Seleziona "Fotocamera" per scattare una nuova foto', 'info', 3000);
+                showMessage('Fotocamera in apertura...', 'info', 2000);
             }
         })
 
@@ -1256,11 +1257,8 @@
                     
                     console.log('Telegram WebApp rilevato - configurazione fotocamera ottimizzata');
                 } else {
-                    // Browser web normale - usa capture per accesso diretto alla fotocamera
-                    if (photoInput) {
-                        photoInput.setAttribute('capture', 'environment');
-                    }
-                    console.log('Browser web rilevato - capture fotocamera abilitato');
+                    // Browser web normale - capture sarà impostato solo dal pulsante fotocamera
+                    console.log('Browser web rilevato - input file per selezione, pulsante per fotocamera');
                 }
 
                 // Inizializza componenti
