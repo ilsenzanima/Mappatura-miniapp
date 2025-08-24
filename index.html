@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report Lavoro</title>
-    
+    <!-- FIX: Re-inserito lo script di Telegram, fondamentale per il funzionamento -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
             --tg-bg: var(--tg-theme-bg-color, #ffffff);
@@ -29,7 +30,7 @@
         }
         .form-row {
             display: flex;
-            gap: 10px; /* Ridotto lo spazio per farci stare più campi */
+            gap: 10px;
             align-items: flex-end;
         }
         .form-group {
@@ -41,11 +42,7 @@
             font-weight: bold;
             margin-bottom: 8px;
         }
-        input[type="file"],
-        input[type="number"],
-        input[type="text"],
-        select,
-        textarea {
+        input, select, textarea {
             width: 100%;
             padding: 12px;
             border-radius: 8px;
@@ -54,6 +51,64 @@
             color: var(--tg-text);
             box-sizing: border-box;
             font-size: 16px;
+        }
+        /* Stile per i campi con errori */
+        input.field-error, select.field-error, textarea.field-error {
+            border-color: var(--danger-color);
+        }
+        /* Stili per il container della foto */
+        .photo-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+        .photo-input-container input[type="file"] {
+            flex: 1;
+        }
+        .camera-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background-color: var(--tg-button-color, #0088cc);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            min-width: 120px;
+            width: auto;
+        }
+        .camera-button:hover {
+            background-color: var(--tg-button-color, #006ba3);
+            transform: translateY(-1px);
+        }
+        .camera-button:active {
+            transform: translateY(0);
+        }
+        .camera-button svg {
+            flex-shrink: 0;
+        }
+        .help-text {
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+            color: var(--tg-hint, #999);
+            font-style: italic;
+        }
+        /* Responsive design per dispositivi mobili */
+        @media (max-width: 480px) {
+            .photo-input-container {
+                flex-direction: column;
+            }
+            .camera-button {
+                width: 100%;
+                min-width: unset;
+            }
         }
         button {
             width: 100%;
@@ -70,12 +125,9 @@
             width: 44px;
             height: 44px;
             padding: 0;
-            border-radius: 8px;
             font-size: 24px;
-            font-weight: bold;
             flex-shrink: 0;
             margin-bottom: 20px;
-            cursor: pointer;
         }
         .add-btn {
             background-color: var(--tg-button);
@@ -100,105 +152,26 @@
             margin-top: 15px;
             font-weight: bold;
         }
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid var(--tg-hint);
-            border-radius: 50%;
-            border-top-color: var(--tg-button);
-            animation: spin 1s ease-in-out infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .error-message {
-            background-color: var(--danger-color);
-            color: var(--danger-text-color);
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
-            text-align: center;
-        }
-        .success-message {
-            background-color: #28a745;
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
-            text-align: center;
-        }
-        .field-error {
-            border-color: var(--danger-color) !important;
-            background-color: rgba(220, 53, 69, 0.1);
-        }
-        .offline-indicator {
-            background-color: #ffc107;
-            color: #212529;
-            padding: 8px;
-            text-align: center;
-            font-size: 14px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-        }
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-        /* Focus management */
-        *:focus {
-            outline: 2px solid var(--tg-button);
-            outline-offset: 2px;
-        }
-        /* Skip link per accessibilità */
-        .skip-link {
-            position: absolute;
-            top: -40px;
-            left: 6px;
-            background: var(--tg-button);
-            color: var(--tg-button-text);
-            padding: 8px;
-            text-decoration: none;
-            border-radius: 4px;
-            z-index: 1000;
-        }
-        .skip-link:focus {
-            top: 6px;
-        }
-        
-        /* Stili per select con selezione attiva */
-        select[data-selected="true"] {
-            border-color: var(--tg-button);
-            background-color: rgba(var(--tg-button-rgb, 0, 136, 204), 0.1);
-        }
-        
-        select[data-selected="false"] {
-            border-color: #ddd;
-        }
     </style>
 </head>
 <body>
-    <a href="#main-form" class="skip-link">Salta alla navigazione principale</a>
     
     <h1>Invia Report Intervento</h1>
 
-    <form id="main-form" role="main" aria-label="Form per l'invio del report di intervento">
+    <form id="report-form">
         <div class="form-group">
             <label for="photo">Allega Foto</label>
-            <div class="photo-input-container" style="display: flex; gap: 10px; align-items: center;">
-                <input type="file" id="photo" name="photo" accept="image/*" capture="environment" required style="flex: 1;">
-                <button type="button" id="camera-btn" class="action-btn" style="background-color: var(--tg-button); color: var(--tg-button-text); width: auto; padding: 8px 12px; font-size: 14px; margin-bottom: 0;" title="Scatta foto con fotocamera">
-                    📷
+            <div class="photo-input-container">
+                <input type="file" id="photo" name="photo" accept="image/*" capture="environment" required>
+                <button type="button" id="camera-btn" class="camera-button" title="Scatta una foto">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                    <span>Fotocamera</span>
                 </button>
             </div>
-            <small style="color: var(--tg-hint); font-size: 12px; margin-top: 5px; display: block;">📁 "Scegli file" = scatta nuova foto | 📷 "Fotocamera" = seleziona da galleria</small>
+            <small class="help-text">Scegli file: scatta nuova foto • Fotocamera: seleziona dalla galleria</small>
         </div>
 
         <div class="form-row">
@@ -247,22 +220,31 @@
     <script>
         // --- CONFIGURAZIONE ---
         const N8N_WEBHOOK_URL = 'https://n8nilsenzanima.kozow.com/webhook-test/7ca269b6-8d88-4a58-9fc8-13091dc4ad53';
-        // const N8N_WEBHOOK_URL = 'https://n8nilsenzanima.kozow.com/webhook/7ca269b6-8d88-4a58-9fc8-13091dc4ad53'; // Produzione
 
         const PIANO_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRtqvv49emJMYE0khh2PN0ARncBY7P3CE7LMNGYMju7VP5LoofZ0JhNsnSa2w7RmzIgw24rYN36VElS/pub?gid=0&single=true&output=csv';
         const SUPPORTO_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRtqvv49emJMYE0khh2PN0ARncBY7P3CE7LMNGYMju7VP5LoofZ0JhNsnSa2w7RmzIgw24rYN36VElS/pub?gid=290983453&single=true&output=csv';
         const ATTRAVERSAMENTI_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRtqvv49emJMYE0khh2PN0ARncBY7P3CE7LMNGYMju7VP5LoofZ0JhNsnSa2w7RmzIgw24rYN36VElS/pub?gid=1914397949&single=true&output=csv';
-        
-        // Configurazione cache e retry
-        const CACHE_EXPIRY_MS = 30 * 60 * 1000; // 30 minuti
-        const MAX_RETRY_ATTEMPTS = 3;
-        const RETRY_DELAY_MS = 1000;
         // --------------------
 
+        // Inizializza l'oggetto Telegram Web App in modo sicuro
+        let tg;
+        try {
+            tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+            
+            // Configura tema
+            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+            document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#0088cc');
+            
+            console.log('Telegram WebApp rilevato - configurazione fotocamera ottimizzata');
+        } catch (e) {
+            console.error("Impossibile inizializzare l'API di Telegram", e);
+            console.log('Browser web rilevato - input file per selezione, pulsante per fotocamera');
+        }
 
-        
-
-        const form = document.getElementById('main-form');
+        const form = document.getElementById('report-form');
         const submitBtn = document.getElementById('submit-btn');
         const attraversamentiContainer = document.getElementById('attraversamenti-container');
         const addAttraversamentoBtn = document.getElementById('add-attraversamento-btn');
@@ -271,468 +253,82 @@
         let opzioniPiani = [];
         let opzioniAttraversamenti = [];
         let opzioniSupporti = [];
-        let isSubmitting = false;
-        let submitTimeout = null;
-
-        // Gestione stato offline
-        let isOnline = navigator.onLine;
-        window.addEventListener('online', () => {
-            isOnline = true;
-            hideOfflineIndicator();
-        });
-        window.addEventListener('offline', () => {
-            isOnline = false;
-            showOfflineIndicator();
-        });
 
         /**
-         * Mostra indicatore di connessione offline
+         * Funzione semplificata per caricare i dati da un URL
+         * @param {string} url - L'URL del foglio CSV
+         * @returns {Promise<string[]>} - Una lista di opzioni
          */
-        function showOfflineIndicator() {
-            let indicator = document.querySelector('.offline-indicator');
-            if (!indicator) {
-                indicator = document.createElement('div');
-                indicator.className = 'offline-indicator';
-                indicator.textContent = '⚠️ Connessione offline - Alcune funzionalità potrebbero non essere disponibili';
-                document.body.insertBefore(indicator, document.body.firstChild);
-            }
-        }
-
-        /**
-         * Nasconde indicatore di connessione offline
-         */
-        function hideOfflineIndicator() {
-            const indicator = document.querySelector('.offline-indicator');
-            if (indicator) {
-                indicator.remove();
-            }
-        }
-
-        /**
-         * Mostra messaggio di stato con tipo specificato
-         * @param {string} message - Il messaggio da mostrare
-         * @param {string} type - Tipo di messaggio: 'error', 'success', 'info'
-         * @param {number} duration - Durata in ms (0 = permanente)
-         */
-        function showMessage(message, type = 'info', duration = 5000) {
-            statusDiv.innerHTML = '';
-            const messageDiv = document.createElement('div');
-            messageDiv.className = type === 'error' ? 'error-message' : 
-                                 type === 'success' ? 'success-message' : '';
-            messageDiv.textContent = message;
-            statusDiv.appendChild(messageDiv);
-            
-            if (duration > 0) {
-                setTimeout(() => {
-                    if (statusDiv.contains(messageDiv)) {
-                        statusDiv.removeChild(messageDiv);
-                    }
-                }, duration);
-            }
-        }
-
-        /**
-         * Mostra indicatore di loading
-         * @param {string} message - Messaggio da mostrare accanto al loading
-         */
-        function showLoading(message = 'Caricamento...') {
-            statusDiv.innerHTML = `<div class="loading"></div> ${message}`;
-        }
-
-        /**
-         * Nasconde indicatore di loading
-         */
-        function hideLoading() {
-            statusDiv.innerHTML = '';
-        }
-
-        /**
-         * Gestisce il caching dei dati con localStorage
-         * @param {string} key - Chiave per il cache
-         * @param {any} data - Dati da salvare (opzionale)
-         * @returns {any|null} - Dati dal cache o null se scaduti/non presenti
-         */
-        function handleCache(key, data = null) {
-            const cacheKey = `report_app_${key}`;
-            
-            if (data !== null) {
-                // Salva nel cache
-                const cacheData = {
-                    data: data,
-                    timestamp: Date.now()
-                };
-                try {
-                    localStorage.setItem(cacheKey, JSON.stringify(cacheData));
-                } catch (e) {
-                    console.warn('Impossibile salvare nel cache:', e);
-                }
-                return data;
-            } else {
-                // Leggi dal cache
-                try {
-                    const cached = localStorage.getItem(cacheKey);
-                    if (cached) {
-                        const cacheData = JSON.parse(cached);
-                        const isExpired = Date.now() - cacheData.timestamp > CACHE_EXPIRY_MS;
-                        if (!isExpired) {
-                            return cacheData.data;
-                        } else {
-                            localStorage.removeItem(cacheKey);
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Errore lettura cache:', e);
-                    localStorage.removeItem(cacheKey);
-                }
-                return null;
-            }
-        }
-
-        /**
-         * Implementa retry logic per le chiamate di rete
-         * @param {Function} fn - Funzione da eseguire
-         * @param {number} maxAttempts - Numero massimo di tentativi
-         * @param {number} delay - Ritardo tra i tentativi in ms
-         * @returns {Promise} - Risultato della funzione
-         */
-        async function retryOperation(fn, maxAttempts = MAX_RETRY_ATTEMPTS, delay = RETRY_DELAY_MS) {
-            let lastError;
-            
-            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-                try {
-                    return await fn();
-                } catch (error) {
-                    lastError = error;
-                    console.warn(`Tentativo ${attempt}/${maxAttempts} fallito:`, error.message);
-                    
-                    if (attempt < maxAttempts) {
-                        await new Promise(resolve => setTimeout(resolve, delay * attempt));
-                    }
-                }
-            }
-            
-            throw lastError;
-        }
-
-        /**
-         * Fetch dei dati con caching e retry logic
-         * @param {string} url - URL da cui fare fetch
-         * @param {string} cacheKey - Chiave per il cache
-         * @returns {Promise<Array>} - Array di dati
-         */
-        async function fetchData(url, cacheKey) {
-            if (!url || url.startsWith('INCOLLA_QUI')) {
+        async function fetchData(url) {
+            if (!url || !url.startsWith('https')) {
                 throw new Error(`URL non valido: ${url}`);
             }
-
-            // Controlla cache prima
-            const cachedData = handleCache(cacheKey);
-            if (cachedData) {
-                console.log(`Dati caricati dal cache per: ${cacheKey}`);
-                return cachedData;
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Errore di rete per ${url}`);
             }
+            const csvText = await response.text();
+            // Legge la prima riga e la divide per virgola
+            return csvText.split(/\r?\n/)[0].split(',').map(item => item.trim()).filter(item => item);
+        }
 
-            // Se offline, prova comunque il cache anche se scaduto
-            if (!isOnline) {
-                const expiredCache = localStorage.getItem(`report_app_${cacheKey}`);
-                if (expiredCache) {
-                    try {
-                        const data = JSON.parse(expiredCache).data;
-                        console.log(`Usando cache scaduto per modalità offline: ${cacheKey}`);
-                        return data;
-                    } catch (e) {
-                        console.warn('Cache corrotto:', e);
-                    }
+        /**
+         * Verifica la configurazione del webhook
+         */
+        async function checkWebhookConfiguration() {
+            if (!N8N_WEBHOOK_URL || N8N_WEBHOOK_URL.includes('your-webhook-url-here')) {
+                statusDiv.textContent = 'ERRORE: URL webhook non configurato!';
+                if (tg) {
+                    tg.showAlert('Il webhook N8N non è configurato. Contatta l\'amministratore.');
                 }
-                throw new Error('Nessun dato disponibile offline');
+                return false;
             }
-
-            // Fetch con retry
-            const fetchOperation = async () => {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Errore HTTP ${response.status} per ${url}`);
-                }
-                const csvText = await response.text();
-                const data = csvText.split(/\r?\n/)[0].split(',').map(item => item.trim()).filter(item => item);
-                
-                if (data.length === 0) {
-                    throw new Error('Nessun dato ricevuto dal server');
-                }
-                
-                return data;
-            };
-
-            try {
-                const data = await retryOperation(fetchOperation);
-                // Salva nel cache
-                handleCache(cacheKey, data);
-                return data;
-            } catch (error) {
-                console.error(`Errore nel fetch dei dati per ${cacheKey}:`, error);
-                throw new Error(`Impossibile caricare i dati: ${error.message}`);
-            }
+            return true;
         }
 
         /**
-         * Valida il formato delle dimensioni
-         * @param {string} dimensions - Stringa delle dimensioni da validare
-         * @returns {boolean} - True se il formato è valido
-         */
-        function validateDimensions(dimensions) {
-            if (!dimensions) return true; // Campo opzionale
-            // Accetta formati come: 10x20, 100mm, 5cm, 10.5x20.3, etc.
-            const dimensionPattern = /^\d+(\.\d+)?(x\d+(\.\d+)?)?\s*(mm|cm|m)?$/i;
-            return dimensionPattern.test(dimensions.trim());
-        }
-
-        /**
-         * Valida il numero identificativo
-         * @param {string} numero - Numero da validare
-         * @returns {boolean} - True se il numero è valido
-         */
-        function validateNumero(numero) {
-            const num = parseInt(numero);
-            return !isNaN(num) && num > 0 && num <= 999999;
-        }
-
-        /**
-         * Valida la quantità
-         * @param {string} quantita - Quantità da validare
-         * @returns {boolean} - True se la quantità è valida
-         */
-        function validateQuantita(quantita) {
-            const num = parseInt(quantita);
-            return !isNaN(num) && num > 0 && num <= 1000;
-        }
-
-        /**
-         * Valida il file immagine
-         * @param {File} file - File da validare
-         * @returns {Object} - {isValid: boolean, error: string}
-         */
-        function validateImageFile(file) {
-            if (!file) {
-                return { isValid: false, error: 'Nessun file selezionato' };
-            }
-
-            // Controlla il tipo di file
-            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-            if (!allowedTypes.includes(file.type)) {
-                return { isValid: false, error: 'Formato file non supportato. Usa JPG, PNG o WebP.' };
-            }
-
-            // Controlla la dimensione (max 10MB)
-            const maxSize = 10 * 1024 * 1024; // 10MB
-            if (file.size > maxSize) {
-                return { isValid: false, error: 'File troppo grande. Massimo 10MB.' };
-            }
-
-            return { isValid: true, error: null };
-        }
-
-        /**
-         * Rimuove la classe di errore da un campo
-         * @param {HTMLElement} field - Campo da cui rimuovere l'errore
-         */
-        function clearFieldError(field) {
-            field.classList.remove('field-error');
-        }
-
-        /**
-         * Aggiunge la classe di errore a un campo
-         * @param {HTMLElement} field - Campo a cui aggiungere l'errore
-         */
-        function setFieldError(field) {
-            field.classList.add('field-error');
-        }
-
-        /**
-         * Popola i dropdown con gestione loading e cache
+         * Popola tutti i menu a tendina
          */
         async function populateDropdowns() {
-            showLoading('Caricamento dati...');
+            statusDiv.textContent = 'Caricamento dati...';
+            
+            // Verifica configurazione webhook
+            if (!await checkWebhookConfiguration()) {
+                return;
+            }
             
             try {
-                const [pianiData, supportiData, attraversamentiData] = await Promise.all([
-                    fetchData(PIANO_SHEET_URL, 'piani'),
-                    fetchData(SUPPORTO_SHEET_URL, 'supporti'),
-                    fetchData(ATTRAVERSAMENTI_SHEET_URL, 'attraversamenti')
+                // Carica i dati da tutti e 3 i fogli
+                [opzioniPiani, opzioniSupporti, opzioniAttraversamenti] = await Promise.all([
+                    fetchData(PIANO_SHEET_URL),
+                    fetchData(SUPPORTO_SHEET_URL),
+                    fetchData(ATTRAVERSAMENTI_SHEET_URL)
                 ]);
 
-                opzioniPiani = pianiData;
-                opzioniSupporti = supportiData;
-                opzioniAttraversamenti = attraversamentiData;
-
-                // Popola dropdown piani
+                // Popola il menu "Piano"
                 const pianoSelect = document.getElementById('piano-select');
-                if (pianoSelect) {
-                    // Rimuovi event listener esistenti clonando l'elemento
-                    const newPianoSelect = pianoSelect.cloneNode(false);
-                    // Preserva tutti gli attributi originali
-                    Array.from(pianoSelect.attributes).forEach(attr => {
-                        newPianoSelect.setAttribute(attr.name, attr.value);
-                    });
-                    pianoSelect.parentNode.replaceChild(newPianoSelect, pianoSelect);
-                    
-                    newPianoSelect.innerHTML = '<option value="">Seleziona Piano</option>';
-                    opzioniPiani.forEach(item => {
-                        const option = new Option(item, item);
-                        newPianoSelect.add(option);
-                    });
-                    
-                    // Aggiungi event listener per piano select
-                    newPianoSelect.addEventListener('change', function() {
-                        clearFieldError(this);
-                        this.setAttribute('data-selected', this.value ? 'true' : 'false');
-                    });
-                }
+                pianoSelect.innerHTML = '<option value="">Seleziona Piano</option>';
+                opzioniPiani.forEach(item => pianoSelect.add(new Option(item, item)));
 
-                // Popola dropdown supporti
+                // Popola il menu "Supporto"
                 const supportoSelect = document.getElementById('supporto-select');
-                if (supportoSelect) {
-                    // Rimuovi event listener esistenti clonando l'elemento
-                    const newSupportoSelect = supportoSelect.cloneNode(false);
-                    // Preserva tutti gli attributi originali
-                    Array.from(supportoSelect.attributes).forEach(attr => {
-                        newSupportoSelect.setAttribute(attr.name, attr.value);
-                    });
-                    supportoSelect.parentNode.replaceChild(newSupportoSelect, supportoSelect);
-                    
-                    newSupportoSelect.innerHTML = '<option value="">Seleziona Supporto</option>';
-                    opzioniSupporti.forEach(item => {
-                        const option = new Option(item, item);
-                        newSupportoSelect.add(option);
-                    });
-                    
-                    // Aggiungi event listener per supporto select
-                    newSupportoSelect.addEventListener('change', function() {
-                        clearFieldError(this);
-                        this.setAttribute('data-selected', this.value ? 'true' : 'false');
-                    });
-                }
+                supportoSelect.innerHTML = '<option value="">Seleziona Supporto</option>';
+                opzioniSupporti.forEach(item => supportoSelect.add(new Option(item, item)));
                 
-                // Ripopola tutti i select di attraversamento esistenti
-                repopulateAttraversamentoSelects();
-                
-                hideLoading();
-                showMessage('Dati caricati con successo', 'success', 3000);
+                // Aggiunge la prima riga di attraversamento
+                addAttraversamentoRow(true);
+                statusDiv.textContent = '';
 
             } catch (error) {
                 console.error('Errore nel popolare i dropdown:', error);
-                hideLoading();
-                
-                const errorMessage = isOnline ? 
-                    'Errore nel caricamento dei dati. Riprova più tardi.' :
-                    'Impossibile caricare i dati in modalità offline.';
-                    
-                showMessage(errorMessage, 'error', 0);
-                
-                // In caso di errore, prova a usare dati di fallback se disponibili
-                if (opzioniPiani.length === 0) {
-                    opzioniPiani = ['Piano 1', 'Piano 2', 'Piano 3']; // Fallback
-                }
-                if (opzioniSupporti.length === 0) {
-                    opzioniSupporti = ['Supporto A', 'Supporto B']; // Fallback
-                }
-                if (opzioniAttraversamenti.length === 0) {
-                    opzioniAttraversamenti = ['Attraversamento 1', 'Attraversamento 2']; // Fallback
-                }
-                
-                // Ripopola i select con i dati di fallback
-                populateSelectsWithFallbackData();
-                repopulateAttraversamentoSelects();
-                
-                // Aggiungi prima riga solo se non esistono già
-                const existingRows = document.querySelectorAll('.attraversamento-row');
-                if (existingRows.length === 0) {
-                    addAttraversamentoRow(true);
-                }
+                statusDiv.textContent = 'Errore nel caricamento dati.';
+                if (tg) tg.showAlert('Non è stato possibile caricare i dati dai fogli di calcolo. Controlla che gli URL siano corretti.');
             }
         }
         
         /**
-         * Popola i select con i dati di fallback disponibili
-         */
-        function populateSelectsWithFallbackData() {
-            // Popola dropdown piani
-            const pianoSelect = document.getElementById('piano-select');
-            if (pianoSelect && opzioniPiani.length > 0) {
-                // Rimuovi event listener esistenti clonando l'elemento
-                const newPianoSelect = pianoSelect.cloneNode(false);
-                // Preserva tutti gli attributi originali
-                Array.from(pianoSelect.attributes).forEach(attr => {
-                    newPianoSelect.setAttribute(attr.name, attr.value);
-                });
-                pianoSelect.parentNode.replaceChild(newPianoSelect, pianoSelect);
-                
-                newPianoSelect.innerHTML = '<option value="">Seleziona Piano</option>';
-                opzioniPiani.forEach(item => {
-                    const option = new Option(item, item);
-                    newPianoSelect.add(option);
-                });
-                
-                // Aggiungi event listener per piano select
-                newPianoSelect.addEventListener('change', function() {
-                    clearFieldError(this);
-                    this.setAttribute('data-selected', this.value ? 'true' : 'false');
-                });
-            }
-
-            // Popola dropdown supporti
-            const supportoSelect = document.getElementById('supporto-select');
-            if (supportoSelect && opzioniSupporti.length > 0) {
-                // Rimuovi event listener esistenti clonando l'elemento
-                const newSupportoSelect = supportoSelect.cloneNode(false);
-                // Preserva tutti gli attributi originali
-                Array.from(supportoSelect.attributes).forEach(attr => {
-                    newSupportoSelect.setAttribute(attr.name, attr.value);
-                });
-                supportoSelect.parentNode.replaceChild(newSupportoSelect, supportoSelect);
-                
-                newSupportoSelect.innerHTML = '<option value="">Seleziona Supporto</option>';
-                opzioniSupporti.forEach(item => {
-                    const option = new Option(item, item);
-                    newSupportoSelect.add(option);
-                });
-                
-                // Aggiungi event listener per supporto select
-                newSupportoSelect.addEventListener('change', function() {
-                    clearFieldError(this);
-                    this.setAttribute('data-selected', this.value ? 'true' : 'false');
-                });
-            }
-        }
-        
-        /**
-         * Ripopola tutti i select di attraversamento esistenti
-         */
-        function repopulateAttraversamentoSelects() {
-            const esistingSelects = document.querySelectorAll('.attraversamento-select');
-            esistingSelects.forEach(select => {
-                // Salva il valore corrente
-                const currentValue = select.value;
-                
-                // Ripopola le opzioni
-                select.innerHTML = '<option value="">Seleziona...</option>';
-                opzioniAttraversamenti.forEach(item => {
-                    const option = new Option(item, item);
-                    select.add(option);
-                });
-                
-                // Ripristina il valore se ancora valido
-                if (currentValue && opzioniAttraversamenti.includes(currentValue)) {
-                    select.value = currentValue;
-                    select.setAttribute('data-selected', 'true');
-                } else {
-                    select.setAttribute('data-selected', 'false');
-                }
-            });
-        }
-        
-        /**
-         * Aggiunge una nuova riga di attraversamento con validazione
-         * @param {boolean} isFirstRow - Se è la prima riga
+         * Aggiunge una riga per un nuovo attraversamento
+         * @param {boolean} isFirstRow - Indica se è la prima riga (non avrà il pulsante -)
          */
         function addAttraversamentoRow(isFirstRow = false) {
             const newRow = document.createElement('div');
@@ -740,558 +336,265 @@
             
             const removeButtonHTML = isFirstRow 
                 ? '' 
-                : '<button type="button" class="action-btn remove-btn" aria-label="Rimuovi attraversamento">-</button>';
+                : '<button type="button" class="action-btn remove-btn">-</button>';
 
             newRow.innerHTML = `
                 <div class="form-group">
                     <label>${isFirstRow ? 'Attraversamento' : ''}</label>
-                    <select class="attraversamento-select" name="attraversamento" required aria-label="Seleziona attraversamento">
+                    <select class="attraversamento-select" name="attraversamento" required>
                         <option value="">Seleziona...</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>${isFirstRow ? 'Quantità' : ''}</label>
-                    <input type="number" class="quantita-input" name="quantita" placeholder="Qtà" required value="1" min="1" max="1000" aria-label="Quantità">
+                    <input type="number" class="quantita-input" name="quantita" placeholder="Qtà" required value="1">
                 </div>
                 <div class="form-group">
                     <label>${isFirstRow ? 'Dimensioni/Diametro' : ''}</label>
-                    <input type="text" class="dimensioni-diametro-input" name="dimensioni_diametro" placeholder="Es: 100mm" aria-label="Dimensioni o diametro">
+                    <input type="text" class="dimensioni-diametro-input" name="dimensioni_diametro" placeholder="Es: 100mm">
                 </div>
                 ${removeButtonHTML}
             `;
             
             attraversamentiContainer.appendChild(newRow);
             
-            // Popola il select con le opzioni disponibili
             const newSelect = newRow.querySelector('.attraversamento-select');
-            opzioniAttraversamenti.forEach(item => {
-                const option = new Option(item, item);
-                newSelect.add(option);
-            });
-
-            // Aggiungi event listeners per validazione in tempo reale
-            const quantitaInput = newRow.querySelector('.quantita-input');
-            const dimensioniInput = newRow.querySelector('.dimensioni-diametro-input');
-
-            // Event listener per il select attraversamento
-            newSelect.addEventListener('change', function() {
-                clearFieldError(this);
-                // Aggiorna visivamente la selezione
-                this.setAttribute('data-selected', this.value ? 'true' : 'false');
-                
-                // Se viene selezionato un attraversamento, assicurati che la quantità sia almeno 1
-                if (this.value && !quantitaInput.value) {
-                    quantitaInput.value = '1';
-                }
-            });
-
-            quantitaInput.addEventListener('input', function() {
-                clearFieldError(this);
-                if (this.value && !validateQuantita(this.value)) {
-                    setFieldError(this);
-                }
-            });
-
-            dimensioniInput.addEventListener('input', function() {
-                clearFieldError(this);
-                if (this.value && !validateDimensions(this.value)) {
-                    setFieldError(this);
-                }
-            });
+            opzioniAttraversamenti.forEach(item => newSelect.add(new Option(item, item)));
         }
 
-        /**
-         * Debounced function per aggiungere attraversamenti
-         */
-        let addAttraversamentoTimeout = null;
-        function debouncedAddAttraversamento() {
-            if (addAttraversamentoTimeout) {
-                clearTimeout(addAttraversamentoTimeout);
-            }
-            addAttraversamentoTimeout = setTimeout(() => {
-                addAttraversamentoRow();
-            }, 300);
-        }
+        // Event listener per il pulsante "+"
+        addAttraversamentoBtn.addEventListener('click', () => addAttraversamentoRow());
 
-        addAttraversamentoBtn.addEventListener('click', debouncedAddAttraversamento);
-
+        // Event listener per i pulsanti "-"
         attraversamentiContainer.addEventListener('click', function(event) {
             if (event.target.classList.contains('remove-btn')) {
-                const row = event.target.closest('.attraversamento-row');
-                if (row) {
-                    row.remove();
-                    // Assicurati che ci sia almeno una riga
-                    if (attraversamentiContainer.children.length === 0) {
-                        addAttraversamentoRow(true);
-                    }
-                }
+                event.target.closest('.attraversamento-row').remove();
             }
         });
-
-        // Aggiungi validazione in tempo reale per i campi principali
-        document.getElementById('numero-input').addEventListener('input', function() {
-            clearFieldError(this);
-            if (this.value && !validateNumero(this.value)) {
-                setFieldError(this);
-            }
-        });
-
-        document.getElementById('dimensioni-cm-input').addEventListener('input', function() {
-            clearFieldError(this);
-            if (this.value && !validateDimensions(this.value)) {
-                setFieldError(this);
-            }
-        });
-
-        document.getElementById('photo').addEventListener('change', function() {
-            clearFieldError(this);
-            if (this.files[0]) {
-                const validation = validateImageFile(this.files[0]);
-                if (!validation.isValid) {
-                    setFieldError(this);
-                    showMessage(validation.error, 'error', 5000);
-                } else {
-                    showMessage('File immagine valido', 'success', 2000);
-                }
-            }
-        });
-
-        // Gestione pulsante fotocamera
-        document.getElementById('camera-btn').addEventListener('click', function() {
-            const photoInput = document.getElementById('photo');
-            
-            // Crea un input temporaneo per galleria (senza capture)
-            const tempInput = document.createElement('input');
-            tempInput.type = 'file';
-            tempInput.accept = 'image/*';
-            tempInput.style.display = 'none';
-            
-            tempInput.addEventListener('change', function(e) {
-                if (e.target.files && e.target.files[0]) {
-                    // Trasferisci il file all'input principale
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(e.target.files[0]);
-                    photoInput.files = dataTransfer.files;
-                    
-                    // Trigger change event sull'input principale
-                    photoInput.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-                document.body.removeChild(tempInput);
-            });
-            
-            document.body.appendChild(tempInput);
-            tempInput.click();
-            showMessage('Galleria in apertura...', 'info', 2000);
-        })
 
         /**
-         * Converte un file in Base64
-         * @param {File} file - File da convertire
-         * @returns {Promise<string>} - Stringa Base64
+         * Converte un file in una stringa Base64
+         * @param {File} file - Il file da convertire
+         * @returns {Promise<string>}
          */
         function fileToBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(new Error('Errore nella lettura del file'));
+                reader.onerror = error => reject(error);
             });
         }
 
         /**
-         * Valida tutti i campi del form
-         * @returns {Object} - {isValid: boolean, errors: Array}
+         * Funzione per validare il form prima dell'invio
+         * @returns {boolean} - True se il form è valido, altrimenti False
          */
         function validateForm() {
-            const errors = [];
             let isValid = true;
+            // Rimuove tutti gli errori precedenti
+            document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
 
-            // Reset errori precedenti
-            document.querySelectorAll('.field-error').forEach(field => {
-                clearFieldError(field);
-            });
-
-            // Valida foto
-            const photoFile = document.getElementById('photo').files[0];
-            const photoInput = document.getElementById('photo');
-            const photoValidation = validateImageFile(photoFile);
-            if (!photoValidation.isValid) {
-                setFieldError(photoInput);
-                errors.push(photoValidation.error);
-                isValid = false;
-            }
-
-            // Valida piano
-            const pianoSelect = document.getElementById('piano-select');
-            if (!pianoSelect.value) {
-                setFieldError(pianoSelect);
-                errors.push('Seleziona un piano');
-                isValid = false;
-            }
-
-            // Valida numero
-            const numeroInput = document.getElementById('numero-input');
-            if (!numeroInput.value || !validateNumero(numeroInput.value)) {
-                setFieldError(numeroInput);
-                errors.push('Inserisci un numero identificativo valido (1-999999)');
-                isValid = false;
-            }
-
-            // Valida supporto
-            const supportoSelect = document.getElementById('supporto-select');
-            if (!supportoSelect.value) {
-                setFieldError(supportoSelect);
-                errors.push('Seleziona un supporto');
-                isValid = false;
-            }
-
-            // Valida dimensioni CM (opzionale ma se presente deve essere valida)
-            const dimensioniCmInput = document.getElementById('dimensioni-cm-input');
-            if (dimensioniCmInput.value && !validateDimensions(dimensioniCmInput.value)) {
-                setFieldError(dimensioniCmInput);
-                errors.push('Formato dimensioni non valido (es: 10x20, 100mm)');
-                isValid = false;
-            }
-
-            // Valida attraversamenti
-            const attraversamentiRows = document.querySelectorAll('.attraversamento-row');
-            let hasValidAttraversamento = false;
-
-            attraversamentiRows.forEach((row, index) => {
-                const select = row.querySelector('.attraversamento-select');
-                const quantitaInput = row.querySelector('.quantita-input');
-                const dimensioniInput = row.querySelector('.dimensioni-diametro-input');
-
-                if (select.value) {
-                    hasValidAttraversamento = true;
-                    
-                    // Valida quantità
-                    if (!quantitaInput.value || !validateQuantita(quantitaInput.value)) {
-                        setFieldError(quantitaInput);
-                        errors.push(`Riga ${index + 1}: Quantità non valida (1-1000)`);
-                        isValid = false;
-                    }
-
-                    // Valida dimensioni (opzionale)
-                    if (dimensioniInput.value && !validateDimensions(dimensioniInput.value)) {
-                        setFieldError(dimensioniInput);
-                        errors.push(`Riga ${index + 1}: Formato dimensioni non valido`);
-                        isValid = false;
-                    }
-                } else if (quantitaInput.value || dimensioniInput.value) {
-                    setFieldError(select);
-                    errors.push(`Riga ${index + 1}: Seleziona il tipo di attraversamento`);
+            // Controlla tutti i campi 'required'
+            form.querySelectorAll('[required]').forEach(input => {
+                if (!input.value) {
                     isValid = false;
+                    input.classList.add('field-error');
                 }
             });
 
-            if (!hasValidAttraversamento) {
-                errors.push('Aggiungi almeno un attraversamento');
-                isValid = false;
+            if (!isValid) {
+                statusDiv.textContent = 'Compila tutti i campi evidenziati.';
+                if (tg) tg.showAlert('Per favore, compila tutti i campi obbligatori.');
             }
-
-            return { isValid, errors };
+            
+            return isValid;
         }
 
-        /**
-         * Invia i dati del form con retry logic
-         * @param {Object} payload - Dati da inviare
-         * @returns {Promise} - Risultato dell'invio
-         */
-        async function submitFormData(payload) {
-            if (!N8N_WEBHOOK_URL || N8N_WEBHOOK_URL.startsWith('INCOLLA_QUI')) {
-                throw new Error('URL webhook non configurato. Contatta l\'amministratore.');
-            }
-
-            const submitOperation = async () => {
-                const response = await fetch(N8N_WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text().catch(() => 'Errore sconosciuto');
-                    throw new Error(`Errore server (${response.status}): ${errorText}`);
-                }
-
-                return response;
-            };
-
-            return await retryOperation(submitOperation);
-        }
-
-        // Debounced submit per prevenire invii multipli
-        let submitInProgress = false;
-        
+        // Event listener per l'invio del form
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
-            
-            // Previeni invii multipli
-            if (submitInProgress) {
-                showMessage('Invio già in corso...', 'info', 2000);
-                return;
-            }
+            if (!validateForm()) return;
 
-            // Cancella timeout precedente se presente
-            if (submitTimeout) {
-                clearTimeout(submitTimeout);
-            }
+            submitBtn.disabled = true;
+            statusDiv.textContent = 'Invio in corso...';
 
-            submitTimeout = setTimeout(async () => {
-                submitInProgress = true;
-                submitBtn.disabled = true;
+            try {
+                // Raccoglie tutti i dati dal form
+                const photoFile = document.getElementById('photo').files[0];
+                const selectedPiano = document.getElementById('piano-select').value;
+                const numero = document.getElementById('numero-input').value;
+                const selectedSupporto = document.getElementById('supporto-select').value;
+                const dimensioniCm = document.getElementById('dimensioni-cm-input').value;
+                const notes = document.getElementById('notes').value;
+
+                const attraversamentiData = [];
+                document.querySelectorAll('.attraversamento-row').forEach(row => {
+                    const select = row.querySelector('.attraversamento-select');
+                    const quantitaInput = row.querySelector('.quantita-input');
+                    const dimensioniInput = row.querySelector('.dimensioni-diametro-input');
+                    if (select.value) {
+                        attraversamentiData.push({ 
+                            tipo: select.value, 
+                            quantita: quantitaInput.value,
+                            dimensioni: dimensioniInput.value
+                        });
+                    }
+                });
+
+                const photoBase64 = await fileToBase64(photoFile);
                 
-                try {
-                    showLoading('Validazione dati...');
+                // Crea un payload base per tutti gli attraversamenti
+                const basePayload = {
+                    photo: photoBase64,
+                    piano: selectedPiano,
+                    numero: parseInt(numero),
+                    supporto: selectedSupporto,
+                    dimensioniCm: dimensioniCm || null,
+                    notes: notes || null,
+                    telegramUser: tg ? tg.initDataUnsafe?.user : null,
+                    timestamp: new Date().toISOString()
+                };
+
+                // Invia un payload separato per ogni attraversamento (crea righe multiple)
+                let successCount = 0;
+                for (let i = 0; i < attraversamentiData.length; i++) {
+                    const attraversamento = attraversamentiData[i];
+                    const payload = {
+                        ...basePayload,
+                        attraversamento_tipo: attraversamento.tipo,
+                        attraversamento_quantita: parseInt(attraversamento.quantita) || 1,
+                        attraversamento_dimensioni: attraversamento.dimensioni || null,
+                        riga_numero: i + 1,
+                        totale_attraversamenti: attraversamentiData.length
+                    };
                     
-                    // Valida form
-                    const validation = validateForm();
-                    if (!validation.isValid) {
-                        hideLoading();
-                        const errorMessage = validation.errors.join('\n');
-                        showMessage(`Errori di validazione:\n${errorMessage}`, 'error', 8000);
-                        return;
-                    }
-
-                    // Controlla connessione
-                    if (!isOnline) {
-                        hideLoading();
-                        showMessage('Impossibile inviare: connessione offline', 'error', 5000);
-                        return;
-                    }
-
-                    showLoading('Elaborazione immagine...');
+                    statusDiv.textContent = `Invio dati... (${i + 1}/${attraversamentiData.length})`;
                     
-                    // Raccogli dati
-                    const photoFile = document.getElementById('photo').files[0];
-                    const selectedPiano = document.getElementById('piano-select').value;
-                    const numero = document.getElementById('numero-input').value;
-                    const selectedSupporto = document.getElementById('supporto-select').value;
-                    const dimensioniCm = document.getElementById('dimensioni-cm-input').value;
-                    const notes = document.getElementById('notes').value;
+                    const response = await fetch(N8N_WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
 
-                    const attraversamentiData = [];
-                    document.querySelectorAll('.attraversamento-row').forEach(row => {
-                        const select = row.querySelector('.attraversamento-select');
-                        const dimensioniInput = row.querySelector('.dimensioni-diametro-input');
-                        const quantitaInput = row.querySelector('.quantita-input');
-                        if (select.value) {
-                            attraversamentiData.push({ 
-                                tipo: select.value, 
-                                quantita: parseInt(quantitaInput.value),
-                                dimensioni: dimensioniInput.value || null
-                            });
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        let errorMessage = `Errore ${response.status} nell'attraversamento ${i + 1}: ${response.statusText}`;
+                        
+                        try {
+                            const errorData = JSON.parse(errorText);
+                            if (errorData.message) {
+                                errorMessage += ` - ${errorData.message}`;
+                            }
+                            if (errorData.hint) {
+                                errorMessage += ` Suggerimento: ${errorData.hint}`;
+                            }
+                        } catch (e) {
+                            // Se non è JSON, usa il testo grezzo
+                            if (errorText) {
+                                errorMessage += ` - ${errorText}`;
+                            }
+                        }
+                        
+                        throw new Error(errorMessage);
+                    }
+                    
+                    successCount++;
+                }
+                
+                statusDiv.textContent = `Report inviato con successo! ${successCount} righe create in Google Sheets.`;
+                if (tg) {
+                    tg.showAlert('Il tuo report è stato inviato correttamente.', () => {
+                        if (tg.close) {
+                            tg.close();
                         }
                     });
 
-                    // Converti immagine
-                    const photoBase64 = await fileToBase64(photoFile);
-                    
-                    showLoading('Invio dati...');
-                    
-                    // Crea un payload separato per ogni attraversamento
-                    const basePayload = {
-                        photo: photoBase64,
-                        piano: selectedPiano,
-                        numero: parseInt(numero),
-                        supporto: selectedSupporto,
-                        dimensioniCm: dimensioniCm || null,
-                        notes: notes || null,
-                        telegramUser: null,
-                        timestamp: new Date().toISOString()
-                    };
-
-                    // Invia un payload per ogni attraversamento (crea righe multiple)
-                    let successCount = 0;
-                    for (let i = 0; i < attraversamentiData.length; i++) {
-                        const attraversamento = attraversamentiData[i];
-                        const payload = {
-                            ...basePayload,
-                            attraversamento_tipo: attraversamento.tipo,
-                            attraversamento_quantita: attraversamento.quantita,
-                            attraversamento_dimensioni: attraversamento.dimensioni,
-                            riga_numero: i + 1,
-                            totale_attraversamenti: attraversamentiData.length
-                        };
-                        
-                        try {
-                            await submitFormData(payload);
-                            successCount++;
-                            showLoading(`Invio dati... (${successCount}/${attraversamentiData.length})`);
-                        } catch (error) {
-                            console.error(`Errore invio attraversamento ${i + 1}:`, error);
-                            throw new Error(`Errore nell'invio dell'attraversamento ${i + 1}: ${error.message}`);
-                        }
-                    }
-                    
-                    hideLoading();
-                    showMessage(`Report inviato con successo! ${successCount} righe create in Google Sheets.`, 'success', 3000);
-                    
-                    // Chiudi app dopo successo
-                    setTimeout(() => {
-                        // App completata con successo
-                    }, 2000);
-
-                } catch (error) {
-                    console.error('Errore invio form:', error);
-                    hideLoading();
-                    
-                    let errorMessage = 'Errore durante l\'invio del report.';
-                    if (error.message.includes('Failed to fetch')) {
-                        errorMessage = 'Errore di connessione. Controlla la rete e riprova.';
-                    } else if (error.message.includes('URL webhook')) {
-                        errorMessage = error.message;
-                    } else {
-                        errorMessage += ` Dettagli: ${error.message}`;
-                    }
-                    
-                    showMessage(errorMessage, 'error', 10000);
-                    
-                } finally {
-                    submitInProgress = false;
-                    submitBtn.disabled = false;
                 }
-            }, 500); // Debounce di 500ms
-        });
 
-        /**
-         * Gestisce il focus management per accessibilità
-         */
-        function manageFocus() {
-            // Focus trap per modali/messaggi
-            const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-            
-            // Migliora la navigazione con tastiera
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    // Chiudi messaggi con ESC
-                    const messageContainer = document.getElementById('message-container');
-                    if (messageContainer && messageContainer.style.display !== 'none') {
-                        messageContainer.style.display = 'none';
-                    }
-                }
-                
-                // Navigazione rapida con Alt+numero
-                if (e.altKey && e.key >= '1' && e.key <= '9') {
-                    e.preventDefault();
-                    const index = parseInt(e.key) - 1;
-                    const inputs = document.querySelectorAll('input, select, textarea');
-                    if (inputs[index]) {
-                        inputs[index].focus();
-                    }
-                }
-            });
-        }
-
-        /**
-         * Aggiunge attributi ARIA e migliora l'accessibilità
-         */
-        function enhanceAccessibility() {
-            // Aggiungi ARIA labels mancanti
-            const photoInput = document.getElementById('photo');
-            if (photoInput) {
-                photoInput.setAttribute('aria-describedby', 'photo-help');
-                photoInput.setAttribute('accept', 'image/*');
-                
-                // Aggiungi testo di aiuto
-                const helpText = document.createElement('div');
-                helpText.id = 'photo-help';
-                helpText.className = 'sr-only';
-                helpText.textContent = 'Seleziona un\'immagine in formato JPG, PNG o WebP, massimo 10MB';
-                photoInput.parentNode.appendChild(helpText);
-            }
-
-            // Migliora i select
-            const selects = document.querySelectorAll('select');
-            selects.forEach(select => {
-                if (!select.getAttribute('aria-label')) {
-                    const label = select.previousElementSibling;
-                    if (label && label.tagName === 'LABEL') {
-                        select.setAttribute('aria-labelledby', label.id || 'label-' + select.id);
-                    }
-                }
-            });
-
-            // Migliora gli input
-            const inputs = document.querySelectorAll('input[type="text"], input[type="number"], textarea');
-            inputs.forEach(input => {
-                if (!input.getAttribute('aria-label') && !input.getAttribute('aria-labelledby')) {
-                    const label = document.querySelector(`label[for="${input.id}"]`);
-                    if (label) {
-                        input.setAttribute('aria-labelledby', label.id || 'label-' + input.id);
-                    }
-                }
-            });
-
-            // Aggiungi live region per messaggi
-            const messageContainer = document.getElementById('message-container');
-            if (messageContainer) {
-                messageContainer.setAttribute('aria-live', 'polite');
-                messageContainer.setAttribute('aria-atomic', 'true');
-            }
-
-            // Migliora il pulsante submit
-            const submitBtn = document.getElementById('submit-btn');
-            if (submitBtn) {
-                submitBtn.setAttribute('aria-describedby', 'submit-help');
-                
-                const submitHelp = document.createElement('div');
-                submitHelp.id = 'submit-help';
-                submitHelp.className = 'sr-only';
-                submitHelp.textContent = 'Invia il report dopo aver compilato tutti i campi obbligatori';
-                submitBtn.parentNode.appendChild(submitHelp);
-            }
-        }
-
-        /**
-         * Inizializza l'applicazione
-         */
-        function initializeApp() {
-            try {
-                console.log('Inizializzazione app per browser web');
-
-                // Inizializza componenti
-                 populateDropdowns();
-                 
-                 // Aggiungi riga attraversamento solo se non ce ne sono già
-                 const existingRows = document.querySelectorAll('.attraversamento-row');
-                 if (existingRows.length === 0) {
-                     addAttraversamentoRow(true);
-                 }
-                 
-                 manageFocus();
-                 enhanceAccessibility();
-                
-                // Mostra messaggio di benvenuto
-                setTimeout(() => {
-                    showMessage('App caricata correttamente. Compila il form per inviare il report.', 'info', 3000);
-                }, 1000);
-                
-                console.log('App inizializzata con successo');
-                
             } catch (error) {
-                console.error('Errore durante l\'inizializzazione:', error);
-                showMessage('Errore durante il caricamento dell\'app. Ricarica la pagina.', 'error', 10000);
+                console.error('Errore durante l\'invio:', error);
+                
+                let errorMessage = 'Errore durante l\'invio. Riprova.';
+                let alertMessage = 'Si è verificato un errore durante l\'invio.';
+                
+                if (error.message.includes('404')) {
+                    errorMessage = 'ERRORE: Webhook N8N non attivo o non configurato correttamente.';
+                    alertMessage = 'Il webhook N8N non è attivo. Contatta l\'amministratore per attivare il workflow.';
+                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    errorMessage = 'ERRORE: Impossibile raggiungere il server. Controlla la connessione.';
+                    alertMessage = 'Problema di connessione. Verifica la tua connessione internet e riprova.';
+                } else if (error.message.includes('500')) {
+                    errorMessage = 'ERRORE: Problema interno del server webhook.';
+                    alertMessage = 'Errore interno del server. Riprova tra qualche minuto.';
+                }
+                
+                statusDiv.textContent = errorMessage;
+                if (tg) tg.showAlert(alertMessage);
+                submitBtn.disabled = false;
             }
+        });
+
+        // Gestione pulsante fotocamera per Telegram WebApp
+        function setupCameraButton() {
+            // Cerca se esiste un pulsante fotocamera
+            const cameraBtn = document.getElementById('camera-btn');
+            if (!cameraBtn) return;
+            
+            cameraBtn.addEventListener('click', function() {
+                const photoInput = document.getElementById('photo');
+                
+                if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                    // Telegram WebApp - apre galleria
+                    try {
+                        // Rimuovi attributo capture per aprire galleria
+                        photoInput.removeAttribute('capture');
+                        
+                        // Forza il tipo di input per galleria
+                        photoInput.setAttribute('accept', 'image/*');
+                        
+                        // Simula click per aprire la galleria
+                        photoInput.click();
+                        
+                        // Messaggio per galleria
+                        statusDiv.textContent = 'Seleziona una foto dalla galleria';
+                        
+                    } catch (error) {
+                        console.error('Errore accesso galleria in Telegram:', error);
+                        statusDiv.textContent = 'Errore nell\'apertura della galleria';
+                    }
+                } else {
+                    // Comportamento normale per browser web - crea un input temporaneo per galleria
+                    const tempInput = document.createElement('input');
+                    tempInput.type = 'file';
+                    tempInput.accept = 'image/*';
+                    // NON impostare capture per aprire galleria
+                    tempInput.style.display = 'none';
+                    
+                    tempInput.addEventListener('change', function(e) {
+                        if (e.target.files && e.target.files[0]) {
+                            // Trasferisci il file all'input principale
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(e.target.files[0]);
+                            photoInput.files = dataTransfer.files;
+                            
+                            // Trigger change event sull'input principale
+                            photoInput.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                        document.body.removeChild(tempInput);
+                    });
+                    
+                    document.body.appendChild(tempInput);
+                    tempInput.click();
+                    statusDiv.textContent = 'Galleria in apertura...';
+                }
+            });
         }
 
-        // Inizializza l'app quando il DOM è pronto
-        document.addEventListener('DOMContentLoaded', initializeApp);
-        
-        // Gestisci errori globali
-        window.addEventListener('error', (event) => {
-            console.error('Errore globale:', event.error);
-            showMessage('Si è verificato un errore imprevisto. Ricarica la pagina se il problema persiste.', 'error', 8000);
-        });
-        
-        // Gestisci promesse rifiutate
-        window.addEventListener('unhandledrejection', (event) => {
-            console.error('Promise rifiutata:', event.reason);
-            showMessage('Errore durante un\'operazione asincrona.', 'error', 5000);
+        // Avvia il caricamento dei dati quando la pagina è pronta
+        window.addEventListener('DOMContentLoaded', () => {
+            populateDropdowns();
+            setupCameraButton();
         });
     </script>
 
