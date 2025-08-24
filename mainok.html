@@ -300,11 +300,20 @@
         
         <div class="form-row">
             <div class="form-group">
+                <label for="parete-solaio-select">Parete / Solaio</label>
+                <select id="parete-solaio-select" name="parete_solaio" required>
+                    <option value="">Caricamento...</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label for="supporto-select">Supporto</label>
                 <select id="supporto-select" name="supporto" required>
                     <option value="">Caricamento...</option>
                 </select>
             </div>
+        </div>
+        
+        <div class="form-row">
             <div class="form-group">
                 <label for="dimensioni-cm-input">Dimensioni CM</label>
                 <input type="text" id="dimensioni-cm-input" name="dimensioni_cm" placeholder="Es: 10x20">
@@ -337,6 +346,7 @@
         const N8N_WEBHOOK_URL = 'https://n8nilsenzanima.kozow.com/webhook/7ca269b6-8d88-4a58-9fc8-13091dc4ad53'; // Production webhook
 
         const PIANO_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRtqvv49emJMYE0khh2PN0ARncBY7P3CE7LMNGYMju7VP5LoofZ0JhNsnSa2w7RmzIgw24rYN36VElS/pub?gid=0&single=true&output=csv';
+        const PARETE_SOLAIO_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRtqvv49emJMYE0khh2PN0ARncBY7P3CE7LMNGYMju7VP5LoofZ0JhNsnSa2w7RmzIgw24rYN36VElS/pub?gid=1227962695&single=true&output=csv';
         const SUPPORTO_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRtqvv49emJMYE0khh2PN0ARncBY7P3CE7LMNGYMju7VP5LoofZ0JhNsnSa2w7RmzIgw24rYN36VElS/pub?gid=290983453&single=true&output=csv';
         const ATTRAVERSAMENTI_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRtqvv49emJMYE0khh2PN0ARncBY7P3CE7LMNGYMju7VP5LoofZ0JhNsnSa2w7RmzIgw24rYN36VElS/pub?gid=1914397949&single=true&output=csv';
         // --------------------
@@ -366,6 +376,7 @@
         const statusDiv = document.getElementById('status');
 
         let opzioniPiani = [];
+        let opzioniPareteSolaio = [];
         let opzioniAttraversamenti = [];
         let opzioniSupporti = [];
 
@@ -411,9 +422,10 @@
             }
             
             try {
-                // Carica i dati da tutti e 3 i fogli
-                [opzioniPiani, opzioniSupporti, opzioniAttraversamenti] = await Promise.all([
+                // Carica i dati da tutti e 4 i fogli
+                [opzioniPiani, opzioniPareteSolaio, opzioniSupporti, opzioniAttraversamenti] = await Promise.all([
                     fetchData(PIANO_SHEET_URL),
+                    fetchData(PARETE_SOLAIO_SHEET_URL),
                     fetchData(SUPPORTO_SHEET_URL),
                     fetchData(ATTRAVERSAMENTI_SHEET_URL)
                 ]);
@@ -422,6 +434,11 @@
                 const pianoSelect = document.getElementById('piano-select');
                 pianoSelect.innerHTML = '<option value="">Seleziona Piano</option>';
                 opzioniPiani.forEach(item => pianoSelect.add(new Option(item, item)));
+
+                // Popola il menu "Parete / Solaio"
+                const pareteSolaioSelect = document.getElementById('parete-solaio-select');
+                pareteSolaioSelect.innerHTML = '<option value="">Seleziona Parete / Solaio</option>';
+                opzioniPareteSolaio.forEach(item => pareteSolaioSelect.add(new Option(item, item)));
 
                 // Popola il menu "Supporto"
                 const supportoSelect = document.getElementById('supporto-select');
