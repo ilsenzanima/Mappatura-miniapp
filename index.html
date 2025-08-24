@@ -160,6 +160,32 @@
             margin-top: 15px;
             font-weight: bold;
         }
+        .submit-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .reload-btn {
+            background-color: var(--tg-hint, #999999);
+            color: white;
+            font-size: 14px;
+            padding: 12px 16px;
+            width: auto;
+            min-width: 140px;
+            flex-shrink: 0;
+        }
+        .reload-btn:hover {
+            background-color: var(--tg-hint, #777777);
+        }
+        @media (max-width: 480px) {
+            .submit-container {
+                flex-direction: column;
+            }
+            .reload-btn {
+                width: 100%;
+                min-width: unset;
+            }
+        }
     </style>
 </head>
 <body>
@@ -228,7 +254,10 @@
             <textarea id="notes" name="notes" rows="3" placeholder="Aggiungi dettagli qui..."></textarea>
         </div>
 
-        <button type="submit" id="submit-btn">Invia Dati</button>
+        <div class="submit-container">
+            <button type="submit" id="submit-btn">Invia Dati</button>
+            <button type="button" id="reload-btn" class="reload-btn">🔄 Ricarica Pagina</button>
+        </div>
     </form>
 
     <div id="status"></div>
@@ -608,6 +637,14 @@
         window.addEventListener('DOMContentLoaded', () => {
             populateDropdowns();
             setupCameraButtons();
+            
+            // Setup pulsante reload
+            const reloadBtn = document.getElementById('reload-btn');
+            if (reloadBtn) {
+                reloadBtn.addEventListener('click', () => {
+                    window.location.reload();
+                });
+            }
         });
     </script>
 
