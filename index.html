@@ -273,10 +273,30 @@
         }
 
         /**
+         * Verifica la configurazione del webhook
+         */
+        async function checkWebhookConfiguration() {
+            if (!N8N_WEBHOOK_URL || N8N_WEBHOOK_URL.includes('your-webhook-url-here')) {
+                statusDiv.textContent = 'ERRORE: URL webhook non configurato!';
+                if (tg) {
+                    tg.showAlert('Il webhook N8N non è configurato. Contatta l\'amministratore.');
+                }
+                return false;
+            }
+            return true;
+        }
+
+        /**
          * Popola tutti i menu a tendina
          */
         async function populateDropdowns() {
             statusDiv.textContent = 'Caricamento dati...';
+            
+            // Verifica configurazione webhook
+            if (!await checkWebhookConfiguration()) {
+                return;
+            }
+            
             try {
                 // Carica i dati da tutti e 3 i fogli
                 [opzioniPiani, opzioniSupporti, opzioniAttraversamenti] = await Promise.all([
@@ -443,7 +463,25 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('La risposta dal server non è stata positiva.');
+                    const errorText = await response.text();
+                    let errorMessage = `Errore ${response.status}: ${response.statusText}`;
+                    
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        if (errorData.message) {
+                            errorMessage += ` - ${errorData.message}`;
+                        }
+                        if (errorData.hint) {
+                            errorMessage += ` Suggerimento: ${errorData.hint}`;
+                        }
+                    } catch (e) {
+                        // Se non è JSON, usa il testo grezzo
+                        if (errorText) {
+                            errorMessage += ` - ${errorText}`;
+                        }
+                    }
+                    
+                    throw new Error(errorMessage);
                 }
                 
                 statusDiv.textContent = 'Report inviato con successo!';
@@ -457,8 +495,23 @@
 
             } catch (error) {
                 console.error('Errore durante l\'invio:', error);
-                statusDiv.textContent = 'Errore durante l\'invio. Riprova.';
-                if (tg) tg.showAlert('Si è verificato un errore durante l\'invio.');
+                
+                let errorMessage = 'Errore durante l\'invio. Riprova.';
+                let alertMessage = 'Si è verificato un errore durante l\'invio.';
+                
+                if (error.message.includes('404')) {
+                    errorMessage = 'ERRORE: Webhook N8N non attivo o non configurato correttamente.';
+                    alertMessage = 'Il webhook N8N non è attivo. Contatta l\'amministratore per attivare il workflow.';
+                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    errorMessage = 'ERRORE: Impossibile raggiungere il server. Controlla la connessione.';
+                    alertMessage = 'Problema di connessione. Verifica la tua connessione internet e riprova.';
+                } else if (error.message.includes('500')) {
+                    errorMessage = 'ERRORE: Problema interno del server webhook.';
+                    alertMessage = 'Errore interno del server. Riprova tra qualche minuto.';
+                }
+                
+                statusDiv.textContent = errorMessage;
+                if (tg) tg.showAlert(alertMessage);
                 submitBtn.disabled = false;
             }
         });
