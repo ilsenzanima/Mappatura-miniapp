@@ -324,9 +324,7 @@
         async function checkWebhookConfiguration() {
             if (!N8N_WEBHOOK_URL || N8N_WEBHOOK_URL.includes('your-webhook-url-here')) {
                 statusDiv.textContent = 'ERRORE: URL webhook non configurato!';
-                if (tg) {
-                    tg.showAlert('Il webhook N8N non è configurato. Contatta l\'amministratore.');
-                }
+                console.error('Il webhook N8N non è configurato. Contatta l\'amministratore.');
                 return false;
             }
             return true;
@@ -368,7 +366,8 @@
             } catch (error) {
                 console.error('Errore nel popolare i dropdown:', error);
                 statusDiv.textContent = 'Errore nel caricamento dati.';
-                if (tg) tg.showAlert('Non è stato possibile caricare i dati dai fogli di calcolo. Controlla che gli URL siano corretti.');
+                console.error('Non è stato possibile caricare i dati dai fogli di calcolo. Controlla che gli URL siano corretti.');
+                statusDiv.textContent = 'Errore caricamento dati dai fogli di calcolo';
             }
         }
         
@@ -465,7 +464,8 @@
 
             if (!isValid) {
                 statusDiv.textContent = 'Compila tutti i campi evidenziati.';
-                if (tg) tg.showAlert('Per favore, compila tutti i campi obbligatori.');
+                console.warn('Per favore, compila tutti i campi obbligatori.');
+                return;
             }
             
             return isValid;
@@ -524,25 +524,25 @@
                 }
 
                 statusDiv.textContent = 'Report inviato con successo!';
-                if (tg) {
-                    tg.showAlert('Il tuo report è stato inviato correttamente.', () => {
-                        if (tg.close) {
-                            tg.close();
-                        }
-                    });
-
+                console.log('Il tuo report è stato inviato correttamente.');
+                form.reset();
+                if (tg && tg.close) {
+                    tg.close();
                 }
 
             } catch (error) {
                 console.error('Errore durante l\'invio:', error);
                 
-                let errorMessage = 'Errore durante l\'invio. Riprova.';
-                let alertMessage = 'Si è verificato un errore durante l\'invio.';
+                let errorMessage = 'Si è verificato un errore durante l\'invio del report.';
+                let alertMessage = errorMessage;
                 
-                if (error.message.includes('404')) {
-                    errorMessage = 'ERRORE: Webhook N8N non attivo o non configurato correttamente.';
-                    alertMessage = 'Il webhook N8N non è attivo. Contatta l\'amministratore per attivare il workflow.';
-                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    errorMessage = 'Errore di connessione. Il webhook potrebbe non essere attivo.';
+                    alertMessage = 'Impossibile connettersi al server. Il webhook N8N potrebbe non essere attivo o configurato correttamente.';
+                } else if (error.message && error.message.includes('404')) {
+                    errorMessage = 'Webhook non trovato o non attivo.';
+                    alertMessage = 'Il webhook N8N non è registrato o attivo. Contatta l\'amministratore.';
+                } else if (error.message.includes('NetworkError')) {
                     errorMessage = 'ERRORE: Impossibile raggiungere il server. Controlla la connessione.';
                     alertMessage = 'Problema di connessione. Verifica la tua connessione internet e riprova.';
                 } else if (error.message.includes('500')) {
@@ -551,7 +551,7 @@
                 }
                 
                 statusDiv.textContent = errorMessage;
-                if (tg) tg.showAlert(alertMessage);
+                console.error('Errore invio:', alertMessage);
                 submitBtn.disabled = false;
             }
         });
