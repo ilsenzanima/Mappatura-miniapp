@@ -162,7 +162,7 @@
         <div class="form-group">
             <label for="photo">Allega Foto</label>
             <div class="photo-input-container">
-                <input type="file" id="photo" name="photo" accept="image/*" capture="environment" required>
+                <input type="file" id="photo" name="photo" accept="image/*" required>
                 <button type="button" id="camera-btn" class="camera-button" title="Scatta una foto">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
@@ -170,8 +170,16 @@
                     </svg>
                     <span>Fotocamera</span>
                 </button>
+                <button type="button" id="gallery-btn" class="camera-button" title="Seleziona dalla galleria">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21,15 16,10 5,21"></polyline>
+                    </svg>
+                    <span>Galleria</span>
+                </button>
             </div>
-            <small class="help-text">Scegli file: scatta nuova foto • Fotocamera: seleziona dalla galleria</small>
+            <small class="help-text">Fotocamera: scatta nuova foto • Galleria: seleziona foto esistente</small>
         </div>
 
         <div class="form-row">
@@ -373,7 +381,21 @@
         });
 
         /**
-         * Converte un file in una stringa Base64
+         * Converte un file in ArrayBuffer per invio binario
+         * @param {File} file - Il file da convertire
+         * @returns {Promise<ArrayBuffer>}
+         */
+        function fileToArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsArrayBuffer(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        /**
+         * Converte un file in una stringa Base64 (fallback)
          * @param {File} file - Il file da convertire
          * @returns {Promise<string>}
          */
@@ -442,24 +464,21 @@
                     }
                 });
 
-                const photoBase64 = await fileToBase64(photoFile);
-                
-                const payload = {
-                    photo: photoBase64,
-                    piano: selectedPiano,
-                    numero: parseInt(numero),
-                    supporto: selectedSupporto,
-                    dimensioniCm: dimensioniCm || null,
-                    notes: notes || null,
-                    telegramUser: tg ? tg.initDataUnsafe?.user : null,
-                    timestamp: new Date().toISOString(),
-                    attraversamenti: attraversamentiData
-                };
+                // Crea FormData per invio binario
+                const formData = new FormData();
+                formData.append('photo', photoFile);
+                formData.append('piano', selectedPiano);
+                formData.append('numero', numero);
+                formData.append('supporto', selectedSupporto);
+                formData.append('dimensioniCm', dimensioniCm || '');
+                formData.append('notes', notes || '');
+                formData.append('telegramUser', tg ? JSON.stringify(tg.initDataUnsafe?.user) : '');
+                formData.append('timestamp', new Date().toISOString());
+                formData.append('attraversamenti', JSON.stringify(attraversamentiData));
 
                 const response = await fetch(N8N_WEBHOOK_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: formData
                 });
 
                 if (!response.ok) {
@@ -499,36 +518,52 @@
             }
         });
 
-        // Gestione pulsante fotocamera per Telegram WebApp
-        function setupCameraButton() {
-            // Cerca se esiste un pulsante fotocamera
+        // Gestione pulsanti fotocamera e galleria
+        function setupCameraButtons() {
             const cameraBtn = document.getElementById('camera-btn');
-            if (!cameraBtn) return;
+            const galleryBtn = document.getElementById('gallery-btn');
+            const photoInput = document.getElementById('photo');
             
+            if (!cameraBtn || !galleryBtn || !photoInput) return;
+            
+            // Pulsante Fotocamera - apre la fotocamera
             cameraBtn.addEventListener('click', function() {
-                const photoInput = document.getElementById('photo');
-                
-                if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-                    // Telegram WebApp - apre galleria
-                    try {
-                        // Rimuovi attributo capture per aprire galleria
-                        photoInput.removeAttribute('capture');
-                        
-                        // Forza il tipo di input per galleria
-                        photoInput.setAttribute('accept', 'image/*');
-                        
-                        // Simula click per aprire la galleria
-                        photoInput.click();
-                        
-                        // Messaggio per galleria
-                        statusDiv.textContent = 'Seleziona una foto dalla galleria';
-                        
-                    } catch (error) {
-                        console.error('Errore accesso galleria in Telegram:', error);
-                        statusDiv.textContent = 'Errore nell\'apertura della galleria';
-                    }
-                } else {
-                    // Comportamento normale per browser web - crea un input temporaneo per galleria
+                try {
+                    // Crea input temporaneo per fotocamera
+                    const tempInput = document.createElement('input');
+                    tempInput.type = 'file';
+                    tempInput.accept = 'image/*';
+                    tempInput.capture = 'environment'; // Forza apertura fotocamera
+                    tempInput.style.display = 'none';
+                    
+                    tempInput.addEventListener('change', function(e) {
+                        if (e.target.files && e.target.files[0]) {
+                            // Trasferisci il file all'input principale
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(e.target.files[0]);
+                            photoInput.files = dataTransfer.files;
+                            
+                            // Trigger change event sull'input principale
+                            photoInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            statusDiv.textContent = 'Foto acquisita dalla fotocamera';
+                        }
+                        document.body.removeChild(tempInput);
+                    });
+                    
+                    document.body.appendChild(tempInput);
+                    tempInput.click();
+                    statusDiv.textContent = 'Apertura fotocamera...';
+                    
+                } catch (error) {
+                    console.error('Errore apertura fotocamera:', error);
+                    statusDiv.textContent = 'Errore nell\'apertura della fotocamera';
+                }
+            });
+            
+            // Pulsante Galleria - apre la galleria
+            galleryBtn.addEventListener('click', function() {
+                try {
+                    // Crea input temporaneo per galleria
                     const tempInput = document.createElement('input');
                     tempInput.type = 'file';
                     tempInput.accept = 'image/*';
@@ -544,13 +579,18 @@
                             
                             // Trigger change event sull'input principale
                             photoInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            statusDiv.textContent = 'Foto selezionata dalla galleria';
                         }
                         document.body.removeChild(tempInput);
                     });
                     
                     document.body.appendChild(tempInput);
                     tempInput.click();
-                    statusDiv.textContent = 'Galleria in apertura...';
+                    statusDiv.textContent = 'Apertura galleria...';
+                    
+                } catch (error) {
+                    console.error('Errore apertura galleria:', error);
+                    statusDiv.textContent = 'Errore nell\'apertura della galleria';
                 }
             });
         }
@@ -558,7 +598,7 @@
         // Avvia il caricamento dei dati quando la pagina è pronta
         window.addEventListener('DOMContentLoaded', () => {
             populateDropdowns();
-            setupCameraButton();
+            setupCameraButtons();
         });
     </script>
 
