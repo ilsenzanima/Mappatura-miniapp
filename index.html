@@ -301,6 +301,56 @@
         let opzioniSupporti = [];
 
         /**
+         * Ridimensiona un'immagine per ridurre le dimensioni del file
+         * @param {File} file - Il file immagine da ridimensionare
+         * @param {number} maxWidth - Larghezza massima
+         * @param {number} maxHeight - Altezza massima
+         * @param {number} quality - Qualità JPEG (0-1)
+         * @returns {Promise<File>} - Il file ridimensionato
+         */
+        async function resizeImage(file, maxWidth = 1920, maxHeight = 1080, quality = 0.8) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    // Calcola le nuove dimensioni mantenendo le proporzioni
+                    let { width, height } = img;
+                    
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height = (height * maxWidth) / width;
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxHeight) {
+                            width = (width * maxHeight) / height;
+                            height = maxHeight;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // Disegna l'immagine ridimensionata
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Converte in blob
+                    canvas.toBlob((blob) => {
+                        const resizedFile = new File([blob], file.name, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+                        resolve(resizedFile);
+                    }, 'image/jpeg', quality);
+                };
+                
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        /**
          * Funzione semplificata per caricare i dati da un URL
          * @param {string} url - L'URL del foglio CSV
          * @returns {Promise<string[]>} - Una lista di opzioni
@@ -502,9 +552,17 @@
                     }
                 });
 
+                // Ridimensiona la foto se troppo grande (max 2MB)
+                let processedPhoto = photoFile;
+                if (photoFile && photoFile.size > 2 * 1024 * 1024) {
+                    statusDiv.textContent = 'Ridimensionamento foto in corso...';
+                    processedPhoto = await resizeImage(photoFile, 1920, 1080, 0.8);
+                    console.log(`Foto ridimensionata da ${(photoFile.size / 1024 / 1024).toFixed(2)}MB a ${(processedPhoto.size / 1024 / 1024).toFixed(2)}MB`);
+                }
+
                 // Crea FormData per invio binario
                 const formData = new FormData();
-                formData.append('photo', photoFile);
+                formData.append('photo', processedPhoto);
                 formData.append('piano', selectedPiano);
                 formData.append('numero', numero);
                 formData.append('supporto', selectedSupporto);
@@ -514,10 +572,17 @@
                 formData.append('timestamp', new Date().toISOString());
                 formData.append('attraversamenti', JSON.stringify(attraversamentiData));
 
+                // Crea controller per timeout personalizzato
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi timeout
+
                 const response = await fetch(N8N_WEBHOOK_URL, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
 
                 if (!response.ok) {
                     throw new Error(`Errore ${response.status}: ${response.statusText}`);
@@ -536,7 +601,10 @@
                 let errorMessage = 'Si è verificato un errore durante l\'invio del report.';
                 let alertMessage = errorMessage;
                 
-                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                if (error.name === 'AbortError') {
+                    errorMessage = 'Timeout: L\'invio ha richiesto troppo tempo.';
+                    alertMessage = 'L\'invio è stato interrotto per timeout. La foto potrebbe essere troppo grande. Riprova con una foto più piccola.';
+                } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
                     errorMessage = 'Errore di connessione. Il webhook potrebbe non essere attivo.';
                     alertMessage = 'Impossibile connettersi al server. Il webhook N8N potrebbe non essere attivo o configurato correttamente.';
                 } else if (error.message && error.message.includes('404')) {
@@ -548,6 +616,9 @@
                 } else if (error.message.includes('500')) {
                     errorMessage = 'ERRORE: Problema interno del server webhook.';
                     alertMessage = 'Errore interno del server. Riprova tra qualche minuto.';
+                } else if (error.message.includes('413') || error.message.includes('Payload Too Large')) {
+                    errorMessage = 'ERRORE: File troppo grande.';
+                    alertMessage = 'La foto è troppo grande per essere inviata. Riprova con una foto più piccola.';
                 }
                 
                 statusDiv.textContent = errorMessage;
@@ -576,14 +647,22 @@
                     
                     tempInput.addEventListener('change', function(e) {
                         if (e.target.files && e.target.files[0]) {
+                            const file = e.target.files[0];
+                            const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+                            
                             // Trasferisci il file all'input principale
                             const dataTransfer = new DataTransfer();
-                            dataTransfer.items.add(e.target.files[0]);
+                            dataTransfer.items.add(file);
                             photoInput.files = dataTransfer.files;
                             
                             // Trigger change event sull'input principale
                             photoInput.dispatchEvent(new Event('change', { bubbles: true }));
-                            statusDiv.textContent = 'Foto acquisita dalla fotocamera';
+                            
+                            if (file.size > 5 * 1024 * 1024) { // 5MB
+                                statusDiv.textContent = `Foto acquisita (${fileSizeMB}MB) - Sarà ridimensionata automaticamente`;
+                            } else {
+                                statusDiv.textContent = `Foto acquisita dalla fotocamera (${fileSizeMB}MB)`;
+                            }
                         }
                         document.body.removeChild(tempInput);
                     });
@@ -610,14 +689,22 @@
                     
                     tempInput.addEventListener('change', function(e) {
                         if (e.target.files && e.target.files[0]) {
+                            const file = e.target.files[0];
+                            const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+                            
                             // Trasferisci il file all'input principale
                             const dataTransfer = new DataTransfer();
-                            dataTransfer.items.add(e.target.files[0]);
+                            dataTransfer.items.add(file);
                             photoInput.files = dataTransfer.files;
                             
                             // Trigger change event sull'input principale
                             photoInput.dispatchEvent(new Event('change', { bubbles: true }));
-                            statusDiv.textContent = 'Foto selezionata dalla galleria';
+                            
+                            if (file.size > 5 * 1024 * 1024) { // 5MB
+                                statusDiv.textContent = `Foto selezionata (${fileSizeMB}MB) - Sarà ridimensionata automaticamente`;
+                            } else {
+                                statusDiv.textContent = `Foto selezionata dalla galleria (${fileSizeMB}MB)`;
+                            }
                         }
                         document.body.removeChild(tempInput);
                     });
