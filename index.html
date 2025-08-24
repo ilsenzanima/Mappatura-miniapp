@@ -56,6 +56,60 @@
         input.field-error, select.field-error, textarea.field-error {
             border-color: var(--danger-color);
         }
+        /* Stili per il container della foto */
+        .photo-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+        .photo-input-container input[type="file"] {
+            flex: 1;
+        }
+        .camera-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background-color: var(--tg-button-color, #0088cc);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            min-width: 120px;
+            width: auto;
+        }
+        .camera-button:hover {
+            background-color: var(--tg-button-color, #006ba3);
+            transform: translateY(-1px);
+        }
+        .camera-button:active {
+            transform: translateY(0);
+        }
+        .camera-button svg {
+            flex-shrink: 0;
+        }
+        .help-text {
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+            color: var(--tg-hint, #999);
+            font-style: italic;
+        }
+        /* Responsive design per dispositivi mobili */
+        @media (max-width: 480px) {
+            .photo-input-container {
+                flex-direction: column;
+            }
+            .camera-button {
+                width: 100%;
+                min-width: unset;
+            }
+        }
         button {
             width: 100%;
             padding: 15px;
@@ -107,7 +161,17 @@
     <form id="report-form">
         <div class="form-group">
             <label for="photo">Allega Foto</label>
-            <input type="file" id="photo" name="photo" accept="image/*" required>
+            <div class="photo-input-container">
+                <input type="file" id="photo" name="photo" accept="image/*" capture="environment" required>
+                <button type="button" id="camera-btn" class="camera-button" title="Scatta una foto">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                    <span>Fotocamera</span>
+                </button>
+            </div>
+            <small class="help-text">Scegli file: scatta nuova foto • Fotocamera: seleziona dalla galleria</small>
         </div>
 
         <div class="form-row">
