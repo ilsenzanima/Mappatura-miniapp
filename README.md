@@ -39,29 +39,74 @@ Una mini-app Telegram avanzata per la raccolta e l'invio di report di lavoro con
 3. Carica il file su un server web o hosting
 4. Configura il bot Telegram per puntare alla tua URL
 
-## 📊 Struttura Dati Output
+## 📊 Struttura JSON Output per N8N
 
-I dati vengono inviati in formato JSON. **Per ogni attraversamento viene creata una riga separata** in Google Sheets con questa struttura:
+L'applicazione supporta **due metodi** per inviare i dati a N8N:
+
+### Metodo 1: Payload Multipli (Default)
+Invia un payload separato per ogni attraversamento. Ogni payload contiene:
 
 ```json
 {
-  "photo": "data:image/jpeg;base64,...",
-  "piano": "Piano selezionato",
+  "photo": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...",
+  "piano": "P-2",
   "numero": 123,
-  "supporto": "Tipo supporto",
-  "dimensioniCm": "10x20",
-  "attraversamento_tipo": "Tipo attraversamento",
-  "attraversamento_quantita": 5,
-  "attraversamento_dimensioni": "15x25",
+  "supporto": "Laterocemento non intercettato",
+  "dimensioniCm": "[null]",
+  "notes": "[null]",
+  "telegramUser": {
+    "id": 123456789,
+    "first_name": "Nome",
+    "username": "username"
+  },
+  "timestamp": "2025-01-24T09:33:22.274Z",
+  "attraversamento_tipo": "Cavi",
+  "attraversamento_quantita": 1,
+  "attraversamento_dimensioni": "[null]",
   "riga_numero": 1,
-  "totale_attraversamenti": 3,
-  "notes": "Note aggiuntive",
-  "telegramUser": { /* Dati utente Telegram */ },
-  "timestamp": "2024-01-01T12:00:00.000Z"
+  "totale_attraversamenti": 3
 }
 ```
 
-**Esempio**: Se un report ha 3 attraversamenti diversi, verranno inviati 3 payload separati, creando 3 righe in Google Sheets, ognuna con gli stessi dati base ma con attraversamento diverso.
+### Metodo 2: Singolo Payload con Array
+Invia un singolo payload contenente tutti gli attraversamenti:
+
+```json
+{
+  "photo": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...",
+  "piano": "P-2",
+  "numero": 123,
+  "supporto": "Laterocemento non intercettato",
+  "dimensioniCm": "[null]",
+  "notes": "[null]",
+  "telegramUser": {
+    "id": 123456789,
+    "first_name": "Nome",
+    "username": "username"
+  },
+  "timestamp": "2025-01-24T09:33:22.274Z",
+  "attraversamenti": [
+    {
+      "tipo": "Cavi",
+      "quantita": "1",
+      "dimensioni": "[null]"
+    },
+    {
+      "tipo": "Tubi",
+      "quantita": "2",
+      "dimensioni": "50mm"
+    }
+  ]
+}
+```
+
+### Cambio Metodo
+Per cambiare metodo, modifica la variabile `USE_MULTIPLE_REQUESTS` nel codice:
+- `true`: Usa payload multipli (Metodo 1)
+- `false`: Usa singolo payload con array (Metodo 2)
+
+### Debug
+Entrambi i metodi includono logging dettagliato nella console del browser per il debug.
 
 ## 🔒 Sicurezza
 
