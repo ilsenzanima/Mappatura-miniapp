@@ -167,8 +167,17 @@
         try {
             tg = window.Telegram.WebApp;
             tg.ready();
+            tg.expand();
+            
+            // Configura tema
+            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+            document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#0088cc');
+            
+            console.log('Telegram WebApp rilevato - configurazione fotocamera ottimizzata');
         } catch (e) {
             console.error("Impossibile inizializzare l'API di Telegram", e);
+            console.log('Browser web rilevato - input file per selezione, pulsante per fotocamera');
         }
 
         const form = document.getElementById('report-form');
@@ -359,7 +368,7 @@
                     dimensioniCm: dimensioniCm,
                     attraversamenti: attraversamentiData,
                     notes: notes,
-                    telegramUser: tg ? tg.initDataUnsafe.user : null,
+                    telegramUser: tg ? tg.initDataUnsafe?.user : null,
                     timestamp: new Date().toISOString()
                 };
 
@@ -375,7 +384,11 @@
                 
                 statusDiv.textContent = 'Report inviato con successo!';
                 if (tg) {
-                    tg.showAlert('Il tuo report è stato inviato correttamente.', () => tg.close());
+                    tg.showAlert('Il tuo report è stato inviato correttamente.', () => {
+                        if (tg.close) {
+                            tg.close();
+                        }
+                    });
                 }
 
             } catch (error) {
@@ -386,8 +399,67 @@
             }
         });
 
+        // Gestione pulsante fotocamera per Telegram WebApp
+        function setupCameraButton() {
+            // Cerca se esiste un pulsante fotocamera
+            const cameraBtn = document.getElementById('camera-btn');
+            if (!cameraBtn) return;
+            
+            cameraBtn.addEventListener('click', function() {
+                const photoInput = document.getElementById('photo');
+                
+                if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                    // Telegram WebApp - apre galleria
+                    try {
+                        // Rimuovi attributo capture per aprire galleria
+                        photoInput.removeAttribute('capture');
+                        
+                        // Forza il tipo di input per galleria
+                        photoInput.setAttribute('accept', 'image/*');
+                        
+                        // Simula click per aprire la galleria
+                        photoInput.click();
+                        
+                        // Messaggio per galleria
+                        statusDiv.textContent = 'Seleziona una foto dalla galleria';
+                        
+                    } catch (error) {
+                        console.error('Errore accesso galleria in Telegram:', error);
+                        statusDiv.textContent = 'Errore nell\'apertura della galleria';
+                    }
+                } else {
+                    // Comportamento normale per browser web - crea un input temporaneo per galleria
+                    const tempInput = document.createElement('input');
+                    tempInput.type = 'file';
+                    tempInput.accept = 'image/*';
+                    // NON impostare capture per aprire galleria
+                    tempInput.style.display = 'none';
+                    
+                    tempInput.addEventListener('change', function(e) {
+                        if (e.target.files && e.target.files[0]) {
+                            // Trasferisci il file all'input principale
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(e.target.files[0]);
+                            photoInput.files = dataTransfer.files;
+                            
+                            // Trigger change event sull'input principale
+                            photoInput.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                        document.body.removeChild(tempInput);
+                    });
+                    
+                    document.body.appendChild(tempInput);
+                    tempInput.click();
+                    statusDiv.textContent = 'Galleria in apertura...';
+                }
+            });
+        }
+
         // Avvia il caricamento dei dati quando la pagina è pronta
-        window.addEventListener('DOMContentLoaded', populateDropdowns);
+        window.addEventListener('DOMContentLoaded', () => {
+            populateDropdowns();
+            setupCameraButton();
+        });
     </script>
 
 </body>
