@@ -444,8 +444,7 @@
 
                 const photoBase64 = await fileToBase64(photoFile);
                 
-                // Crea un payload base per tutti gli attraversamenti
-                const basePayload = {
+                const payload = {
                     photo: photoBase64,
                     piano: selectedPiano,
                     numero: parseInt(numero),
@@ -453,130 +452,21 @@
                     dimensioniCm: dimensioniCm || null,
                     notes: notes || null,
                     telegramUser: tg ? tg.initDataUnsafe?.user : null,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    attraversamenti: attraversamentiData
                 };
 
-                // METODO 1: Invia un payload separato per ogni attraversamento (crea righe multiple)
-                // METODO 2: Invia un singolo payload con array di attraversamenti
-                const USE_MULTIPLE_REQUESTS = true; // Cambia a false per usare singolo payload
-                
-                let successCount = 0;
-                console.log(`Invio di ${attraversamentiData.length} attraversamenti:`, attraversamentiData);
-                
-                if (USE_MULTIPLE_REQUESTS) {
-                    // METODO 1: Richieste multiple
-                
-                for (let i = 0; i < attraversamentiData.length; i++) {
-                    const attraversamento = attraversamentiData[i];
-                    const payload = {
-                        ...basePayload,
-                        attraversamento_tipo: attraversamento.tipo,
-                        attraversamento_quantita: parseInt(attraversamento.quantita) || 1,
-                        attraversamento_dimensioni: attraversamento.dimensioni || null,
-                        riga_numero: i + 1,
-                        totale_attraversamenti: attraversamentiData.length
-                    };
-                    
-                    console.log(`Invio payload ${i + 1}:`, payload);
-                    statusDiv.textContent = `Invio dati... (${i + 1}/${attraversamentiData.length})`;
-                    
-                    try {
-                        const response = await fetch(N8N_WEBHOOK_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            console.error(`Errore risposta ${i + 1}:`, response.status, errorText);
-                            let errorMessage = `Errore ${response.status} nell'attraversamento ${i + 1}: ${response.statusText}`;
-                            
-                            try {
-                                const errorData = JSON.parse(errorText);
-                                if (errorData.message) {
-                                    errorMessage += ` - ${errorData.message}`;
-                                }
-                                if (errorData.hint) {
-                                    errorMessage += ` Suggerimento: ${errorData.hint}`;
-                                }
-                            } catch (e) {
-                                // Se non è JSON, usa il testo grezzo
-                                if (errorText) {
-                                    errorMessage += ` - ${errorText}`;
-                                }
-                            }
-                            
-                            throw new Error(errorMessage);
-                        }
-                        
-                        const responseData = await response.text();
-                        console.log(`Risposta ${i + 1} ricevuta:`, responseData);
-                        successCount++;
-                        
-                        // Aggiungi un piccolo delay tra le richieste per evitare sovraccarico
-                        if (i < attraversamentiData.length - 1) {
-                            await new Promise(resolve => setTimeout(resolve, 500));
-                        }
-                        
-                    } catch (fetchError) {
-                        console.error(`Errore fetch ${i + 1}:`, fetchError);
-                        throw fetchError;
-                    }
+                if (!response.ok) {
+                    throw new Error(`Errore ${response.status}: ${response.statusText}`);
                 }
-                 
-                } else {
-                    // METODO 2: Singolo payload con array
-                    console.log('Usando metodo singolo payload con array');
-                    const payload = {
-                        ...basePayload,
-                        attraversamenti: attraversamentiData
-                    };
-                    
-                    console.log('Invio payload singolo:', payload);
-                    statusDiv.textContent = 'Invio dati...';
-                    
-                    try {
-                        const response = await fetch(N8N_WEBHOOK_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
 
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            console.error('Errore risposta:', response.status, errorText);
-                            let errorMessage = `Errore ${response.status}: ${response.statusText}`;
-                            
-                            try {
-                                const errorData = JSON.parse(errorText);
-                                if (errorData.message) {
-                                    errorMessage += ` - ${errorData.message}`;
-                                }
-                                if (errorData.hint) {
-                                    errorMessage += ` Suggerimento: ${errorData.hint}`;
-                                }
-                            } catch (e) {
-                                if (errorText) {
-                                    errorMessage += ` - ${errorText}`;
-                                }
-                            }
-                            
-                            throw new Error(errorMessage);
-                        }
-                        
-                        const responseData = await response.text();
-                        console.log('Risposta ricevuta:', responseData);
-                        successCount = attraversamentiData.length;
-                        
-                    } catch (fetchError) {
-                        console.error('Errore fetch:', fetchError);
-                        throw fetchError;
-                    }
-                }
-                 
-                 statusDiv.textContent = `Report inviato con successo! ${successCount} righe create in Google Sheets.`;
-                 console.log(`Invio completato: ${successCount}/${attraversamentiData.length} attraversamenti inviati con successo`);
+                statusDiv.textContent = 'Report inviato con successo!';
                 if (tg) {
                     tg.showAlert('Il tuo report è stato inviato correttamente.', () => {
                         if (tg.close) {

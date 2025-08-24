@@ -41,35 +41,7 @@ Una mini-app Telegram avanzata per la raccolta e l'invio di report di lavoro con
 
 ## 📊 Struttura JSON Output per N8N
 
-L'applicazione supporta **due metodi** per inviare i dati a N8N:
-
-### Metodo 1: Payload Multipli (Default)
-Invia un payload separato per ogni attraversamento. Ogni payload contiene:
-
-```json
-{
-  "photo": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...",
-  "piano": "P-2",
-  "numero": 123,
-  "supporto": "Laterocemento non intercettato",
-  "dimensioniCm": "[null]",
-  "notes": "[null]",
-  "telegramUser": {
-    "id": 123456789,
-    "first_name": "Nome",
-    "username": "username"
-  },
-  "timestamp": "2025-01-24T09:33:22.274Z",
-  "attraversamento_tipo": "Cavi",
-  "attraversamento_quantita": 1,
-  "attraversamento_dimensioni": "[null]",
-  "riga_numero": 1,
-  "totale_attraversamenti": 3
-}
-```
-
-### Metodo 2: Singolo Payload con Array
-Invia un singolo payload contenente tutti gli attraversamenti:
+L'applicazione invia i dati a N8N tramite webhook con la seguente struttura:
 
 ```json
 {
@@ -99,14 +71,6 @@ Invia un singolo payload contenente tutti gli attraversamenti:
   ]
 }
 ```
-
-### Cambio Metodo
-Per cambiare metodo, modifica la variabile `USE_MULTIPLE_REQUESTS` nel codice:
-- `true`: Usa payload multipli (Metodo 1)
-- `false`: Usa singolo payload con array (Metodo 2)
-
-### Debug
-Entrambi i metodi includono logging dettagliato nella console del browser per il debug.
 
 ## 🔒 Sicurezza
 
