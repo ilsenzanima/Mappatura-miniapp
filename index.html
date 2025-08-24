@@ -1093,23 +1093,43 @@
                     
                     showLoading('Invio dati...');
                     
-                    const payload = {
+                    // Crea un payload separato per ogni attraversamento
+                    const basePayload = {
                         photo: photoBase64,
                         piano: selectedPiano,
                         numero: parseInt(numero),
                         supporto: selectedSupporto,
                         dimensioniCm: dimensioniCm || null,
-                        attraversamenti: attraversamentiData,
                         notes: notes || null,
                         telegramUser: null,
                         timestamp: new Date().toISOString()
                     };
 
-                    // Invia dati
-                    await submitFormData(payload);
+                    // Invia un payload per ogni attraversamento (crea righe multiple)
+                    let successCount = 0;
+                    for (let i = 0; i < attraversamentiData.length; i++) {
+                        const attraversamento = attraversamentiData[i];
+                        const payload = {
+                            ...basePayload,
+                            attraversamento_tipo: attraversamento.tipo,
+                            attraversamento_quantita: attraversamento.quantita,
+                            attraversamento_dimensioni: attraversamento.dimensioni,
+                            riga_numero: i + 1,
+                            totale_attraversamenti: attraversamentiData.length
+                        };
+                        
+                        try {
+                            await submitFormData(payload);
+                            successCount++;
+                            showLoading(`Invio dati... (${successCount}/${attraversamentiData.length})`);
+                        } catch (error) {
+                            console.error(`Errore invio attraversamento ${i + 1}:`, error);
+                            throw new Error(`Errore nell'invio dell'attraversamento ${i + 1}: ${error.message}`);
+                        }
+                    }
                     
                     hideLoading();
-                    showMessage('Report inviato con successo!', 'success', 3000);
+                    showMessage(`Report inviato con successo! ${successCount} righe create in Google Sheets.`, 'success', 3000);
                     
                     // Chiudi app dopo successo
                     setTimeout(() => {

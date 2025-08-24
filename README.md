@@ -41,7 +41,7 @@ Una mini-app Telegram avanzata per la raccolta e l'invio di report di lavoro con
 
 ## 📊 Struttura Dati Output
 
-I dati vengono inviati in formato JSON con questa struttura:
+I dati vengono inviati in formato JSON. **Per ogni attraversamento viene creata una riga separata** in Google Sheets con questa struttura:
 
 ```json
 {
@@ -50,18 +50,18 @@ I dati vengono inviati in formato JSON con questa struttura:
   "numero": 123,
   "supporto": "Tipo supporto",
   "dimensioniCm": "10x20",
-  "attraversamenti": [
-    {
-      "tipo": "Tipo attraversamento",
-      "quantita": 5,
-      "dimensioni": "15x25"
-    }
-  ],
+  "attraversamento_tipo": "Tipo attraversamento",
+  "attraversamento_quantita": 5,
+  "attraversamento_dimensioni": "15x25",
+  "riga_numero": 1,
+  "totale_attraversamenti": 3,
   "notes": "Note aggiuntive",
   "telegramUser": { /* Dati utente Telegram */ },
   "timestamp": "2024-01-01T12:00:00.000Z"
 }
 ```
+
+**Esempio**: Se un report ha 3 attraversamenti diversi, verranno inviati 3 payload separati, creando 3 righe in Google Sheets, ognuna con gli stessi dati base ma con attraversamento diverso.
 
 ## 🔒 Sicurezza
 
