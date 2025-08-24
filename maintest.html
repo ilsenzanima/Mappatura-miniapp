@@ -656,6 +656,7 @@
                 const photoFile = document.getElementById('photo').files[0];
                 const selectedPiano = document.getElementById('piano-select').value;
                 const numero = document.getElementById('numero-input').value;
+                const selectedPareteSolaio = document.getElementById('parete-solaio-select').value;
                 const selectedSupporto = document.getElementById('supporto-select').value;
                 const dimensioniCm = document.getElementById('dimensioni-cm-input').value;
                 const notes = document.getElementById('notes').value;
@@ -679,6 +680,7 @@
                 formData.append('photo', photoFile);
                 formData.append('piano', selectedPiano);
                 formData.append('numero', numero);
+                formData.append('parete_solaio', selectedPareteSolaio);
                 formData.append('supporto', selectedSupporto);
                 formData.append('dimensioniCm', dimensioniCm || '');
                 formData.append('notes', notes || '');
