@@ -342,10 +342,11 @@
         // const N8N_WEBHOOK_URL = 'https://n8nilsenzanima.kozow.com/webhook-test/7ca269b6-8d88-4a58-9fc8-13091dc4ad53'; // Test webhook
         const N8N_WEBHOOK_URL = 'https://n8nilsenzanima.kozow.com/webhook/7ca269b6-8d88-4a58-9fc8-13091dc4ad53'; // Production webhook
 
-        const PIANO_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRtqvv49emJMYE0khh2PN0ARncBY7P3CE7LMNGYMju7VP5LoofZ0JhNsnSa2w7RmzIgw24rYN36VElS/pub?gid=0&single=true&output=csv';
-        const PARETE_SOLAIO_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRtqvv49emJMYE0khh2PN0ARncBY7P3CE7LMNGYMju7VP5LoofZ0JhNsnSa2w7RmzIgw24rYN36VElS/pub?gid=1227962695&single=true&output=csv';
-        const SUPPORTO_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRtqvv49emJMYE0khh2PN0ARncBY7P3CE7LMNGYMju7VP5LoofZ0JhNsnSa2w7RmzIgw24rYN36VElS/pub?gid=290983453&single=true&output=csv';
-        const ATTRAVERSAMENTI_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRtqvv49emJMYE0khh2PN0ARncBY7P3CE7LMNGYMju7VP5LoofZ0JhNsnSa2w7RmzIgw24rYN36VElS/pub?gid=1914397949&single=true&output=csv';
+        // Dati CSV locali
+        const PIANO_DATA = ['P -3','P -2','P -1','P 0','P 1','P 2','P 3','P 4','P 5','P 6','P 7','P 8','P 9','P 10','P 11','P 12','P 13','P 14','P 15','P 16','P 17','P 18','P 19','P 20','P 21','P 22','P 23'];
+        const PARETE_SOLAIO_DATA = ['Parete','Solaio'];
+        const SUPPORTO_DATA = ['Flessibile','Laterizio intonacato','Laterizio non intonacato','CLS','Leca','Cemento armato','Legno'];
+        const ATTRAVERSAMENTI_DATA = ['Cavi/Corrugati','Canalina passacavi','Scatola elettrica','Tubo combustibile','Tubo multistrato','Tubo RAME','Tubo incombustibile NUDO','Tubo incombustibile ISOLATO lana','Tubo incombustibile ISOLATO combustibile','Serranda','Barra armata'];
         // --------------------
 
         // Inizializza l'oggetto Telegram Web App in modo sicuro
@@ -419,13 +420,11 @@
             }
             
             try {
-                // Carica i dati da tutti e 4 i fogli
-                [opzioniPiani, opzioniPareteSolaio, opzioniSupporti, opzioniAttraversamenti] = await Promise.all([
-                    fetchData(PIANO_SHEET_URL),
-                    fetchData(PARETE_SOLAIO_SHEET_URL),
-                    fetchData(SUPPORTO_SHEET_URL),
-                    fetchData(ATTRAVERSAMENTI_SHEET_URL)
-                ]);
+                // Usa i dati locali
+                opzioniPiani = PIANO_DATA;
+                opzioniPareteSolaio = PARETE_SOLAIO_DATA;
+                opzioniSupporti = SUPPORTO_DATA;
+                opzioniAttraversamenti = ATTRAVERSAMENTI_DATA;
 
                 // Popola il menu "Piano"
                 const pianoSelect = document.getElementById('piano-select');
@@ -449,8 +448,6 @@
             } catch (error) {
                 console.error('Errore nel popolare i dropdown:', error);
                 statusDiv.textContent = 'Errore nel caricamento dati.';
-                console.error('Non è stato possibile caricare i dati dai fogli di calcolo. Controlla che gli URL siano corretti.');
-                statusDiv.textContent = 'Errore caricamento dati dai fogli di calcolo';
             }
         }
         
