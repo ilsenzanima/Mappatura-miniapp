@@ -73,27 +73,6 @@
         .photo-input-container input[type="file"]::file-selector-button {
             display: none;
         }
-       .photo-preview {
-            display: none; 
-            margin-top: 10px;
-            justify-content: center;
-            align-items: center;
-            border: 1px solid var(--tg-hint);
-            border-radius: 8px;
-            background-color: var(--tg-secondary-bg);
-            overflow: hidden;
-            max-height: 250px;
-            padding: 5px;
-        }
-        .photo-preview.active {
-            display: flex; 
-        }
-        .photo-preview img {
-        max-width: 100%; 
-        max-height: 240px; 
-        object-fit: contain; 
-        border-radius: 6px;
-        }
         .camera-button {
             display: flex;
             align-items: center;
@@ -131,22 +110,14 @@
         }
         /* Responsive design per dispositivi mobili */
         @media (max-width: 480px) {
-            .form-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
-        @media (max-width: 480px) {
             .photo-input-container {
                 flex-direction: column;
             }
             .camera-button {
                 width: 100%;
                 min-width: unset;
-                margin-bottom: 8px;
             }
         }
-
         button {
             width: 100%;
             padding: 15px;
@@ -165,16 +136,6 @@
             font-size: 24px;
             flex-shrink: 0;
             margin-bottom: 20px;
-        }
-
-        @media (max-width: 480px) {
-            .controls-container {
-                flex-direction: column;
-                gap: 8px;
-            }
-            .action-btn {
-                width: 100%;
-            }
         }
         .add-btn {
             background-color: var(--tg-button);
@@ -204,17 +165,6 @@
             gap: 10px;
             align-items: center;
         }
-
-        @media (max-width: 480px) {
-            .submit-container {
-                flex-direction: column;
-            }
-            .reload-btn {
-                width: 100%;
-                min-width: unset;
-            }
-        }
-
         .reload-btn {
             background-color: var(--tg-hint, #999999);
             color: white;
@@ -236,21 +186,6 @@
                 min-width: unset;
             }
         }
-        @media (max-width: 480px) {
-            input, select, textarea {
-                padding: 10px;
-                font-size: 14px;
-            }
-            .camera-button {
-                font-size: 13px;
-                padding: 10px;
-            }
-            button {
-                font-size: 15px;
-                padding: 12px;
-            }
-        }
-
     </style>
 </head>
 <body>
@@ -261,6 +196,7 @@
         <div class="form-group">
             <label for="photo">Allega Foto</label>
             <div class="photo-input-container">
+                <input type="file" id="photo" name="photo" accept="image/*" required>
                 <button type="button" id="camera-btn" class="camera-button" title="Scatta una foto">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
@@ -276,12 +212,7 @@
                     </svg>
                     <span>Galleria</span>
                 </button>
-                <input type="file" id="photo" name="photo" accept="image/*" required>
             </div>
-
-            <!-- Anteprima immagine -->
-                <div id="photo-preview" class="photo-preview"></div>
-
             <small class="help-text">Fotocamera: scatta nuova foto • Galleria: seleziona foto esistente</small>
         </div>
 
@@ -299,6 +230,12 @@
         </div>
         
         <div class="form-row">
+            <div class="form-group">
+                <label for="parete-solaio-select">Parete / Solaio</label>
+                <select id="parete-solaio-select" name="parete_solaio" required>
+                    <option value="">Caricamento...</option>
+                </select>
+            </div>
             <div class="form-group">
                 <label for="supporto-select">Supporto</label>
                 <select id="supporto-select" name="supporto" required>
@@ -333,15 +270,14 @@
 
     <script>
         // --- CONFIGURAZIONE ---
-        // const N8N_WEBHOOK_URL = 'https://n8nilsenzanima.kozow.com/webhook-test/7ca269b6-8d88-4a58-9fc8-13091dc4ad53'; // Test webhook
-        const N8N_WEBHOOK_URL = 'https://n8n.fire-block.org:5678/webhook/7ca269b6-8d88-4a58-9fc8-13091dc4ad53'; // Test webhook
+        const N8N_WEBHOOK_URL = 'https://n8n.fire-block.org/webhook/miniapp'; // Miniapp webhook
 
         // Dati CSV locali
         const PIANO_DATA = ['P -3','P -2','P -1','P 0','P 1','P 2','P 3','P 4','P 5','P 6','P 7','P 8','P 9','P 10','P 11','P 12','P 13','P 14','P 15','P 16','P 17','P 18','P 19','P 20','P 21','P 22','P 23'];
+        const PARETE_SOLAIO_DATA = ['Parete','Solaio'];
         const SUPPORTO_DATA = ['Flessibile','Laterizio intonacato','Laterizio non intonacato','CLS','Leca','Cemento armato','Legno'];
         const ATTRAVERSAMENTI_DATA = ['Cavi/Corrugati','Canalina passacavi','Scatola elettrica','Tubo combustibile','Tubo multistrato','Tubo RAME','Tubo incombustibile NUDO','Tubo incombustibile ISOLATO lana','Tubo incombustibile ISOLATO combustibile','Serranda','Barra armata'];
         // --------------------
-
         // Inizializza l'oggetto Telegram Web App in modo sicuro
         let tg;
         try {
@@ -367,8 +303,92 @@
         const statusDiv = document.getElementById('status');
 
         let opzioniPiani = [];
+        let opzioniPareteSolaio = [];
         let opzioniAttraversamenti = [];
         let opzioniSupporti = [];
+
+        /**
+         * Ridimensiona un'immagine per ridurre le dimensioni del file
+         * @param {File} file - Il file immagine da ridimensionare
+         * @param {number} maxWidth - Larghezza massima
+         * @param {number} maxHeight - Altezza massima
+         * @param {number} quality - Qualità JPEG (0-1)
+         * @param {boolean} forceConversion - Forza conversione anche se non necessario ridimensionamento
+         * @returns {Promise<File>} - Il file ridimensionato
+         */
+        async function resizeImage(file, maxWidth = 1920, maxHeight = 1080, quality = 0.8, forceConversion = false) {
+            return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onerror = function() {
+                    console.error('Errore nel caricamento dell\'immagine per il ridimensionamento');
+                    reject(new Error('Impossibile caricare l\'immagine'));
+                };
+                
+                img.onload = function() {
+                    try {
+                        // Calcola le nuove dimensioni mantenendo le proporzioni
+                        let { width, height } = img;
+                        let needsResize = width > maxWidth || height > maxHeight;
+                        
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height = (height * maxWidth) / width;
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width = (width * maxHeight) / height;
+                                height = maxHeight;
+                            }
+                        }
+                        
+                        // Se non serve ridimensionare e non è forzata la conversione, restituisci il file originale
+                        if (!needsResize && !forceConversion) {
+                            resolve(file);
+                            return;
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        // Riempie il canvas con sfondo bianco per evitare trasparenze
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, width, height);
+                        
+                        // Disegna l'immagine ridimensionata
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Converte in blob
+                        canvas.toBlob((blob) => {
+                            if (!blob) {
+                                reject(new Error('Errore nella conversione dell\'immagine'));
+                                return;
+                            }
+                            
+                            const resizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, '.jpg'), {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            });
+                            resolve(resizedFile);
+                        }, 'image/jpeg', quality);
+                    } catch (error) {
+                        console.error('Errore durante il ridimensionamento:', error);
+                        reject(error);
+                    }
+                };
+                
+                // Crea URL dell'oggetto con gestione errori
+                try {
+                    img.src = URL.createObjectURL(file);
+                } catch (error) {
+                    console.error('Errore nella creazione URL oggetto:', error);
+                    reject(error);
+                }
+            });
+        }
 
         /**
          * Funzione semplificata per caricare i dati da un URL
@@ -414,6 +434,7 @@
             try {
                 // Usa i dati locali
                 opzioniPiani = PIANO_DATA;
+                opzioniPareteSolaio = PARETE_SOLAIO_DATA;
                 opzioniSupporti = SUPPORTO_DATA;
                 opzioniAttraversamenti = ATTRAVERSAMENTI_DATA;
 
@@ -421,6 +442,11 @@
                 const pianoSelect = document.getElementById('piano-select');
                 pianoSelect.innerHTML = '<option value="">Seleziona Piano</option>';
                 opzioniPiani.forEach(item => pianoSelect.add(new Option(item, item)));
+
+                // Popola il menu "Parete / Solaio"
+                const pareteSolaioSelect = document.getElementById('parete-solaio-select');
+                pareteSolaioSelect.innerHTML = '<option value="">Seleziona Parete / Solaio</option>';
+                opzioniPareteSolaio.forEach(item => pareteSolaioSelect.add(new Option(item, item)));
 
                 // Popola il menu "Supporto"
                 const supportoSelect = document.getElementById('supporto-select');
@@ -550,6 +576,7 @@
                 const photoFile = document.getElementById('photo').files[0];
                 const selectedPiano = document.getElementById('piano-select').value;
                 const numero = document.getElementById('numero-input').value;
+                const selectedPareteSolaio = document.getElementById('parete-solaio-select').value;
                 const selectedSupporto = document.getElementById('supporto-select').value;
                 const dimensioniCm = document.getElementById('dimensioni-cm-input').value;
                 const notes = document.getElementById('notes').value;
@@ -568,11 +595,20 @@
                     }
                 });
 
+                // Ridimensiona la foto se troppo grande (max 2MB)
+                let processedPhoto = photoFile;
+                if (photoFile && photoFile.size > 2 * 1024 * 1024) {
+                    statusDiv.textContent = 'Ridimensionamento foto in corso...';
+                    processedPhoto = await resizeImage(photoFile, 1920, 1080, 0.8);
+                    console.log(`Foto ridimensionata da ${(photoFile.size / 1024 / 1024).toFixed(2)}MB a ${(processedPhoto.size / 1024 / 1024).toFixed(2)}MB`);
+                }
+
                 // Crea FormData per invio binario
                 const formData = new FormData();
-                formData.append('photo', photoFile);
+                formData.append('photo', processedPhoto);
                 formData.append('piano', selectedPiano);
                 formData.append('numero', numero);
+                formData.append('parete_solaio', selectedPareteSolaio);
                 formData.append('supporto', selectedSupporto);
                 formData.append('dimensioniCm', dimensioniCm || '');
                 formData.append('notes', notes || '');
@@ -580,10 +616,17 @@
                 formData.append('timestamp', new Date().toISOString());
                 formData.append('attraversamenti', JSON.stringify(attraversamentiData));
 
+                // Crea controller per timeout personalizzato
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi timeout
+
                 const response = await fetch(N8N_WEBHOOK_URL, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
 
                 if (!response.ok) {
                     throw new Error(`Errore ${response.status}: ${response.statusText}`);
@@ -602,7 +645,10 @@
                 let errorMessage = 'Si è verificato un errore durante l\'invio del report.';
                 let alertMessage = errorMessage;
                 
-                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                if (error.name === 'AbortError') {
+                    errorMessage = 'Timeout: L\'invio ha richiesto troppo tempo.';
+                    alertMessage = 'L\'invio è stato interrotto per timeout. La foto potrebbe essere troppo grande. Riprova con una foto più piccola.';
+                } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
                     errorMessage = 'Errore di connessione. Il webhook potrebbe non essere attivo.';
                     alertMessage = 'Impossibile connettersi al server. Il webhook N8N potrebbe non essere attivo o configurato correttamente.';
                 } else if (error.message && error.message.includes('404')) {
@@ -614,6 +660,9 @@
                 } else if (error.message.includes('500')) {
                     errorMessage = 'ERRORE: Problema interno del server webhook.';
                     alertMessage = 'Errore interno del server. Riprova tra qualche minuto.';
+                } else if (error.message.includes('413') || error.message.includes('Payload Too Large')) {
+                    errorMessage = 'ERRORE: File troppo grande.';
+                    alertMessage = 'La foto è troppo grande per essere inviata. Riprova con una foto più piccola.';
                 }
                 
                 statusDiv.textContent = errorMessage;
@@ -640,19 +689,34 @@
                     tempInput.capture = 'environment'; // Forza apertura fotocamera
                     tempInput.style.display = 'none';
                     
-                    tempInput.addEventListener('change', function(e) {
+                    tempInput.addEventListener('change', async function(e) {
                         if (e.target.files && e.target.files[0]) {
-                            // Trasferisci il file all'input principale
-                            const dataTransfer = new DataTransfer();
-                            dataTransfer.items.add(e.target.files[0]);
-                            photoInput.files = dataTransfer.files;
+                            const file = e.target.files[0];
+                            const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
                             
-                            // Trigger change event sull'input principale
-                            photoInput.dispatchEvent(new Event('change', { bubbles: true }));
-                            statusDiv.textContent = 'Foto acquisita dalla fotocamera';
-                        }
-                        document.body.removeChild(tempInput);
-                    });
+                            try {
+                                // Per le foto dalla fotocamera, forza sempre la conversione per rimuovere metadati EXIF
+                                statusDiv.textContent = `Elaborazione foto dalla fotocamera (${fileSizeMB}MB)...`;
+                                
+                                const processedFile = await resizeImage(file, 1920, 1080, 0.85, true);
+                                const processedSizeMB = (processedFile.size / 1024 / 1024).toFixed(2);
+                                
+                                // Trasferisci il file processato all'input principale
+                                const dataTransfer = new DataTransfer();
+                                dataTransfer.items.add(processedFile);
+                                photoInput.files = dataTransfer.files;
+                                
+                                // Trigger change event sull'input principale
+                                photoInput.dispatchEvent(new Event('change', { bubbles: true }));
+                                
+                                statusDiv.textContent = `Foto dalla fotocamera elaborata (${processedSizeMB}MB) - Pronta per l'invio`;
+                             } catch (error) {
+                                 console.error('Errore nell\'elaborazione della foto:', error);
+                                 statusDiv.textContent = 'Errore nell\'elaborazione della foto dalla fotocamera';
+                             }
+                         }
+                         document.body.removeChild(tempInput);
+                     });
                     
                     document.body.appendChild(tempInput);
                     tempInput.click();
@@ -664,7 +728,6 @@
                 }
             });
             
-                        
             // Pulsante Galleria - apre la galleria
             galleryBtn.addEventListener('click', function() {
                 try {
@@ -677,14 +740,22 @@
                     
                     tempInput.addEventListener('change', function(e) {
                         if (e.target.files && e.target.files[0]) {
+                            const file = e.target.files[0];
+                            const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+                            
                             // Trasferisci il file all'input principale
                             const dataTransfer = new DataTransfer();
-                            dataTransfer.items.add(e.target.files[0]);
+                            dataTransfer.items.add(file);
                             photoInput.files = dataTransfer.files;
                             
                             // Trigger change event sull'input principale
                             photoInput.dispatchEvent(new Event('change', { bubbles: true }));
-                            statusDiv.textContent = 'Foto selezionata dalla galleria';
+                            
+                            if (file.size > 5 * 1024 * 1024) { // 5MB
+                                statusDiv.textContent = `Foto selezionata (${fileSizeMB}MB) - Sarà ridimensionata automaticamente`;
+                            } else {
+                                statusDiv.textContent = `Foto selezionata dalla galleria (${fileSizeMB}MB)`;
+                            }
                         }
                         document.body.removeChild(tempInput);
                     });
@@ -699,38 +770,11 @@
                 }
             });
         }
-        // Anteprima immagine selezionata   
-        function setupImagePreview() {
-            const photoInput = document.getElementById('photo');
-            const photoPreview = document.getElementById('photo-preview');
-
-            if (!photoInput || !photoPreview) return;
-
-            photoInput.addEventListener('change', function () {
-                photoPreview.innerHTML = '';
-
-                if (this.files && this.files[0]) {
-                    const file = this.files[0];
-                    const img = document.createElement('img');
-                    const url = URL.createObjectURL(file);
-                    img.src = url;
-                    img.alt = 'Anteprima Foto';
-                    photoPreview.appendChild(img);
-
-                    img.onload = () => URL.revokeObjectURL(url);
-                    photoPreview.classList.add('active'); // Mostra il riquadro
-                } else {
-                    photoPreview.classList.remove('active'); // Nasconde il riquadro
-                }
-            });
-        }
-
 
         // Avvia il caricamento dei dati quando la pagina è pronta
         window.addEventListener('DOMContentLoaded', () => {
             populateDropdowns();
             setupCameraButtons();
-            setupImagePreview();
             
             // Setup pulsante reload
             const reloadBtn = document.getElementById('reload-btn');
@@ -744,3 +788,8 @@
 
 </body>
 </html>
+ <!DOCTYPE html
+ <html lang="it">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">

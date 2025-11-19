@@ -300,12 +300,6 @@
         
         <div class="form-row">
             <div class="form-group">
-                <label for="parete-solaio-select">Parete / Solaio</label>
-                <select id="parete-solaio-select" name="parete_solaio" required>
-                    <option value="">Caricamento...</option>
-                </select>
-            </div>
-            <div class="form-group">
                 <label for="supporto-select">Supporto</label>
                 <select id="supporto-select" name="supporto" required>
                     <option value="">Caricamento...</option>
@@ -339,12 +333,10 @@
 
     <script>
         // --- CONFIGURAZIONE ---
-        // const N8N_WEBHOOK_URL = 'https://n8nilsenzanima.kozow.com/webhook-test/7ca269b6-8d88-4a58-9fc8-13091dc4ad53'; // Test webhook
-        const N8N_WEBHOOK_URL = 'https://n8n.fire-block.org:5678/webhook/7ca269b6-8d88-4a58-9fc8-13091dc4ad53'; // Test webhook
+        const N8N_WEBHOOK_URL = 'https://n8n.fire-block.org/webhook/miniapp'; // Miniapp webhook
 
         // Dati CSV locali
         const PIANO_DATA = ['P -3','P -2','P -1','P 0','P 1','P 2','P 3','P 4','P 5','P 6','P 7','P 8','P 9','P 10','P 11','P 12','P 13','P 14','P 15','P 16','P 17','P 18','P 19','P 20','P 21','P 22','P 23'];
-        const PARETE_SOLAIO_DATA = ['Parete','Solaio'];
         const SUPPORTO_DATA = ['Flessibile','Laterizio intonacato','Laterizio non intonacato','CLS','Leca','Cemento armato','Legno'];
         const ATTRAVERSAMENTI_DATA = ['Cavi/Corrugati','Canalina passacavi','Scatola elettrica','Tubo combustibile','Tubo multistrato','Tubo RAME','Tubo incombustibile NUDO','Tubo incombustibile ISOLATO lana','Tubo incombustibile ISOLATO combustibile','Serranda','Barra armata'];
         // --------------------
@@ -374,7 +366,6 @@
         const statusDiv = document.getElementById('status');
 
         let opzioniPiani = [];
-        let opzioniPareteSolaio = [];
         let opzioniAttraversamenti = [];
         let opzioniSupporti = [];
 
@@ -422,7 +413,6 @@
             try {
                 // Usa i dati locali
                 opzioniPiani = PIANO_DATA;
-                opzioniPareteSolaio = PARETE_SOLAIO_DATA;
                 opzioniSupporti = SUPPORTO_DATA;
                 opzioniAttraversamenti = ATTRAVERSAMENTI_DATA;
 
@@ -430,11 +420,6 @@
                 const pianoSelect = document.getElementById('piano-select');
                 pianoSelect.innerHTML = '<option value="">Seleziona Piano</option>';
                 opzioniPiani.forEach(item => pianoSelect.add(new Option(item, item)));
-
-                // Popola il menu "Parete / Solaio"
-                const pareteSolaioSelect = document.getElementById('parete-solaio-select');
-                pareteSolaioSelect.innerHTML = '<option value="">Seleziona Parete / Solaio</option>';
-                opzioniPareteSolaio.forEach(item => pareteSolaioSelect.add(new Option(item, item)));
 
                 // Popola il menu "Supporto"
                 const supportoSelect = document.getElementById('supporto-select');
@@ -496,95 +481,6 @@
                 event.target.closest('.attraversamento-row').remove();
             }
         });
-
-        /**
-         * Ridimensiona un'immagine mantenendo le proporzioni e rimuove i metadati EXIF
-         * @param {File} file - Il file immagine da ridimensionare
-         * @param {number} maxWidth - Larghezza massima (default: 1920)
-         * @param {number} maxHeight - Altezza massima (default: 1080)
-         * @param {number} quality - Qualità JPEG (0-1, default: 0.8)
-         * @param {boolean} forceConversion - Forza conversione a JPEG anche se non necessario ridimensionamento
-         * @returns {Promise<File>} - File ridimensionato
-         */
-        async function resizeImage(file, maxWidth = 1920, maxHeight = 1080, quality = 0.8, forceConversion = false) {
-            return new Promise((resolve, reject) => {
-                try {
-                    const img = new Image();
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    
-                    img.onload = () => {
-                        try {
-                            const { width, height } = img;
-                            
-                            // Calcola le nuove dimensioni mantenendo le proporzioni
-                            let newWidth = width;
-                            let newHeight = height;
-                            
-                            if (width > maxWidth || height > maxHeight || forceConversion) {
-                                const aspectRatio = width / height;
-                                
-                                if (width > height) {
-                                    newWidth = Math.min(width, maxWidth);
-                                    newHeight = newWidth / aspectRatio;
-                                } else {
-                                    newHeight = Math.min(height, maxHeight);
-                                    newWidth = newHeight * aspectRatio;
-                                }
-                                
-                                // Assicura che non superi i limiti
-                                if (newWidth > maxWidth) {
-                                    newWidth = maxWidth;
-                                    newHeight = newWidth / aspectRatio;
-                                }
-                                if (newHeight > maxHeight) {
-                                    newHeight = maxHeight;
-                                    newWidth = newHeight * aspectRatio;
-                                }
-                            }
-                            
-                            // Imposta le dimensioni del canvas
-                            canvas.width = Math.round(newWidth);
-                            canvas.height = Math.round(newHeight);
-                            
-                            // Riempie il canvas con sfondo bianco per evitare trasparenze
-                            ctx.fillStyle = '#FFFFFF';
-                            ctx.fillRect(0, 0, canvas.width, canvas.height);
-                            
-                            // Disegna l'immagine ridimensionata
-                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                            
-                            // Converte in blob JPEG (rimuove automaticamente i metadati EXIF)
-                            canvas.toBlob((blob) => {
-                                if (blob) {
-                                    const resizedFile = new File([blob], file.name, {
-                                        type: 'image/jpeg',
-                                        lastModified: Date.now()
-                                    });
-                                    resolve(resizedFile);
-                                } else {
-                                    reject(new Error('Errore nella conversione dell\'immagine'));
-                                }
-                            }, 'image/jpeg', quality);
-                            
-                        } catch (error) {
-                            console.error('Errore nel ridimensionamento:', error);
-                            reject(error);
-                        }
-                    };
-                    
-                    img.onerror = () => {
-                        reject(new Error('Errore nel caricamento dell\'immagine'));
-                    };
-                    
-                    img.src = URL.createObjectURL(file);
-                    
-                } catch (error) {
-                    console.error('Errore nella funzione resizeImage:', error);
-                    reject(error);
-                }
-            });
-        }
 
         /**
          * Converte un file in ArrayBuffer per invio binario
@@ -653,7 +549,6 @@
                 const photoFile = document.getElementById('photo').files[0];
                 const selectedPiano = document.getElementById('piano-select').value;
                 const numero = document.getElementById('numero-input').value;
-                const selectedPareteSolaio = document.getElementById('parete-solaio-select').value;
                 const selectedSupporto = document.getElementById('supporto-select').value;
                 const dimensioniCm = document.getElementById('dimensioni-cm-input').value;
                 const notes = document.getElementById('notes').value;
@@ -677,7 +572,6 @@
                 formData.append('photo', photoFile);
                 formData.append('piano', selectedPiano);
                 formData.append('numero', numero);
-                formData.append('parete_solaio', selectedPareteSolaio);
                 formData.append('supporto', selectedSupporto);
                 formData.append('dimensioniCm', dimensioniCm || '');
                 formData.append('notes', notes || '');
@@ -685,17 +579,10 @@
                 formData.append('timestamp', new Date().toISOString());
                 formData.append('attraversamenti', JSON.stringify(attraversamentiData));
 
-                // Crea controller per timeout
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi timeout
-                
                 const response = await fetch(N8N_WEBHOOK_URL, {
                     method: 'POST',
-                    body: formData,
-                    signal: controller.signal
+                    body: formData
                 });
-                
-                clearTimeout(timeoutId);
 
                 if (!response.ok) {
                     throw new Error(`Errore ${response.status}: ${response.statusText}`);
@@ -714,13 +601,7 @@
                 let errorMessage = 'Si è verificato un errore durante l\'invio del report.';
                 let alertMessage = errorMessage;
                 
-                if (error.name === 'AbortError') {
-                    errorMessage = 'Timeout: L\'invio ha richiesto troppo tempo. Le foto potrebbero essere troppo grandi.';
-                    alertMessage = 'Timeout dell\'invio. Prova con foto più piccole o verifica la connessione.';
-                } else if (error.message && error.message.includes('413')) {
-                    errorMessage = 'Errore 413: File troppo grande. Le foto potrebbero essere troppo grandi.';
-                    alertMessage = 'File troppo grande per il server. Prova con foto più piccole.';
-                } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
                     errorMessage = 'Errore di connessione. Il webhook potrebbe non essere attivo.';
                     alertMessage = 'Impossibile connettersi al server. Il webhook N8N potrebbe non essere attivo o configurato correttamente.';
                 } else if (error.message && error.message.includes('404')) {
@@ -758,31 +639,16 @@
                     tempInput.capture = 'environment'; // Forza apertura fotocamera
                     tempInput.style.display = 'none';
                     
-                    tempInput.addEventListener('change', async function(e) {
+                    tempInput.addEventListener('change', function(e) {
                         if (e.target.files && e.target.files[0]) {
-                            const file = e.target.files[0];
-                            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                            // Trasferisci il file all'input principale
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(e.target.files[0]);
+                            photoInput.files = dataTransfer.files;
                             
-                            try {
-                                statusDiv.textContent = `Elaborazione foto (${fileSizeMB}MB)...`;
-                                
-                                // Forza conversione JPEG per rimuovere metadati EXIF
-                                const processedFile = await resizeImage(file, 1920, 1080, 0.85, true);
-                                const processedSizeMB = (processedFile.size / (1024 * 1024)).toFixed(2);
-                                
-                                // Trasferisci il file processato all'input principale
-                                const dataTransfer = new DataTransfer();
-                                dataTransfer.items.add(processedFile);
-                                photoInput.files = dataTransfer.files;
-                                
-                                // Trigger change event sull'input principale
-                                photoInput.dispatchEvent(new Event('change', { bubbles: true }));
-                                statusDiv.textContent = `Foto elaborata: ${processedSizeMB}MB (originale: ${fileSizeMB}MB)`;
-                                
-                            } catch (error) {
-                                console.error('Errore nell\'elaborazione della foto:', error);
-                                statusDiv.textContent = 'Errore nell\'elaborazione della foto';
-                            }
+                            // Trigger change event sull'input principale
+                            photoInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            statusDiv.textContent = 'Foto acquisita dalla fotocamera';
                         }
                         document.body.removeChild(tempInput);
                     });
@@ -808,38 +674,16 @@
                     // NON impostare capture per aprire galleria
                     tempInput.style.display = 'none';
                     
-                    tempInput.addEventListener('change', async function(e) {
+                    tempInput.addEventListener('change', function(e) {
                         if (e.target.files && e.target.files[0]) {
-                            const file = e.target.files[0];
-                            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                            // Trasferisci il file all'input principale
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(e.target.files[0]);
+                            photoInput.files = dataTransfer.files;
                             
-                            try {
-                                let processedFile = file;
-                                let statusMessage = `Foto selezionata: ${fileSizeMB}MB`;
-                                
-                                // Ridimensiona solo se necessario (>5MB)
-                                if (file.size > 5 * 1024 * 1024) {
-                                    statusDiv.textContent = `Ridimensionamento foto (${fileSizeMB}MB)...`;
-                                    processedFile = await resizeImage(file, 1920, 1080, 0.8);
-                                    const processedSizeMB = (processedFile.size / (1024 * 1024)).toFixed(2);
-                                    statusMessage = `Foto ridimensionata: ${processedSizeMB}MB (originale: ${fileSizeMB}MB)`;
-                                } else if (parseFloat(fileSizeMB) > 5) {
-                                    statusMessage += ' - Immagine verrà ridimensionata automaticamente';
-                                }
-                                
-                                // Trasferisci il file all'input principale
-                                const dataTransfer = new DataTransfer();
-                                dataTransfer.items.add(processedFile);
-                                photoInput.files = dataTransfer.files;
-                                
-                                // Trigger change event sull'input principale
-                                photoInput.dispatchEvent(new Event('change', { bubbles: true }));
-                                statusDiv.textContent = statusMessage;
-                                
-                            } catch (error) {
-                                console.error('Errore nell\'elaborazione della foto:', error);
-                                statusDiv.textContent = 'Errore nell\'elaborazione della foto';
-                            }
+                            // Trigger change event sull'input principale
+                            photoInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            statusDiv.textContent = 'Foto selezionata dalla galleria';
                         }
                         document.body.removeChild(tempInput);
                     });
@@ -899,3 +743,8 @@
 
 </body>
 </html>
+ <!DOCTYPE html
+ <html lang="it">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
