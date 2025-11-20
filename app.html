@@ -64,14 +64,6 @@
         }
         .photo-input-container input[type="file"] {
             flex: 1;
-            pointer-events: none;
-            cursor: default;
-        }
-        .photo-input-container input[type="file"]::-webkit-file-upload-button {
-            display: none;
-        }
-        .photo-input-container input[type="file"]::file-selector-button {
-            display: none;
         }
        .photo-preview {
             display: none; 
@@ -268,24 +260,21 @@
         <div class="form-group">
             <label for="photo">Allega Foto</label>
             <div class="photo-input-container">
-                <label for="photo-camera" id="camera-btn" class="camera-button" title="Scatta una foto">
+                <button type="button" id="camera-btn" class="camera-button" title="Scatta una foto">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                         <circle cx="12" cy="13" r="4"></circle>
                     </svg>
                     <span>Fotocamera</span>
-                </label>
-                <label for="photo-gallery" id="gallery-btn" class="camera-button" title="Seleziona dalla galleria">
+                </button>
+                <button type="button" id="gallery-btn" class="camera-button" title="Seleziona dalla galleria">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                         <circle cx="8.5" cy="8.5" r="1.5"></circle>
                         <polyline points="21,15 16,10 5,21"></polyline>
                     </svg>
                     <span>Galleria</span>
-                </label>
                 <input type="file" id="photo" name="photo" accept="image/*" required>
-                <input type="file" id="photo-camera" accept="image/*" capture="environment" style="position:absolute;left:-10000px;width:0;height:0;opacity:0;" />
-                <input type="file" id="photo-gallery" accept="image/*" style="position:absolute;left:-10000px;width:0;height:0;opacity:0;" />
             </div>
 
             <!-- Anteprima immagine -->
@@ -347,14 +336,15 @@
     <div id="status"></div>
 
     <div id="camera-overlay" class="camera-overlay">
-        <div class="camera-container">
-            <video id="camera-video" autoplay playsinline></video>
-            <div class="overlay-controls">
-                <button type="button" id="capture-btn" class="camera-button">Scatta</button>
-                <button type="button" id="cancel-camera" class="camera-button">Annulla</button>
+                <div class="camera-container">
+                    <video id="camera-video" autoplay playsinline></video>
+                    <div class="overlay-controls">
+                        <button type="button" id="capture-btn" class="camera-button">Scatta</button>
+                        <button type="button" id="capture-another" class="camera-button">Scatta un'altra</button>
+                        <button type="button" id="cancel-camera" class="camera-button">Annulla</button>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
 
     <script>
         // --- CONFIGURAZIONE ---
@@ -742,8 +732,6 @@
             const cameraBtn = document.getElementById('camera-btn');
             const galleryBtn = document.getElementById('gallery-btn');
             const photoInput = document.getElementById('photo');
-            const photoCamera = document.getElementById('photo-camera');
-            const photoGallery = document.getElementById('photo-gallery');
             
             if (!cameraBtn || !galleryBtn || !photoInput) return;
             const ua = navigator.userAgent || '';
@@ -754,6 +742,7 @@
             const videoEl = document.getElementById('camera-video');
             const captureBtn = document.getElementById('capture-btn');
             const cancelBtn = document.getElementById('cancel-camera');
+            const captureAnotherBtn = document.getElementById('capture-another');
 
             async function openCameraOverlay() {
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return null;
@@ -761,7 +750,7 @@
                 videoEl.srcObject = stream;
                 overlay.classList.add('active');
                 return new Promise((resolve, reject) => {
-                    const onCapture = async () => {
+                    const doCapture = async () => {
                         try {
                             const canvas = document.createElement('canvas');
                             const w = videoEl.videoWidth || 1920;
@@ -778,33 +767,38 @@
                         } catch (e) {
                             reject(e);
                         }
-                        cleanup();
+                        cleanup(true);
                     };
-                    const onCancel = () => { reject(new Error('cancel')); cleanup(); };
-                    const cleanup = () => {
-                        captureBtn.removeEventListener('click', onCapture);
+                    const onCancel = () => { reject(new Error('cancel')); cleanup(false); };
+                    const cleanup = (keepStream) => {
+                        captureBtn.removeEventListener('click', doCapture);
+                        captureAnotherBtn.removeEventListener('click', doCapture);
                         cancelBtn.removeEventListener('click', onCancel);
-                        overlay.classList.remove('active');
-                        if (videoEl.srcObject) {
-                            videoEl.srcObject.getTracks().forEach(t => t.stop());
-                            videoEl.srcObject = null;
+                        if (!keepStream) {
+                            overlay.classList.remove('active');
+                            if (videoEl.srcObject) {
+                                videoEl.srcObject.getTracks().forEach(t => t.stop());
+                                videoEl.srcObject = null;
+                            }
                         }
                     };
-                    captureBtn.addEventListener('click', onCapture);
+                    captureBtn.addEventListener('click', doCapture);
+                    captureAnotherBtn.addEventListener('click', doCapture);
                     cancelBtn.addEventListener('click', onCancel);
                 });
             }
             
-            // Gestione diretta via input/label per Telegram (massima compatibilità)
+            // Imposta attributi capture direttamente sull'input visibile
             if (isIOS) {
-                photoCamera.setAttribute('accept', 'image/*;capture=camera');
-                photoCamera.setAttribute('capture', 'camera');
+                photoInput.setAttribute('accept', 'image/*;capture=camera');
+                photoInput.setAttribute('capture', 'camera');
             } else {
-                photoCamera.setAttribute('accept', 'image/*');
-                photoCamera.setAttribute('capture', 'environment');
+                photoInput.setAttribute('accept', 'image/*');
+                photoInput.setAttribute('capture', 'environment');
             }
 
-            photoCamera.addEventListener('change', async function(e) {
+            // Gestione change dell'input visibile
+            photoInput.addEventListener('change', async function(e) {
                 if (e.target.files && e.target.files[0]) {
                     const file = e.target.files[0];
                     const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
@@ -823,33 +817,8 @@
                 }
             });
 
-            photoGallery.addEventListener('change', async function(e) {
-                if (e.target.files && e.target.files[0]) {
-                    const file = e.target.files[0];
-                    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                    try {
-                        let processedFile = file;
-                        let statusMessage = `Foto selezionata: ${fileSizeMB}MB`;
-                        if (file.size > 5 * 1024 * 1024) {
-                            statusDiv.textContent = `Ridimensionamento foto (${fileSizeMB}MB)...`;
-                            processedFile = await resizeImage(file, 1920, 1080, 0.85);
-                            const processedSizeMB = (processedFile.size / (1024 * 1024)).toFixed(2);
-                            statusMessage = `Foto ridimensionata: ${processedSizeMB}MB (originale: ${fileSizeMB}MB)`;
-                        }
-                        const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(processedFile);
-                        photoInput.files = dataTransfer.files;
-                        photoInput.dispatchEvent(new Event('change', { bubbles: true }));
-                        statusDiv.textContent = statusMessage;
-                    } catch (error) {
-                        console.error('Errore elaborazione foto:', error);
-                        statusDiv.textContent = 'Errore nell\'elaborazione della foto';
-                    }
-                }
-            });
-
-            // Se non Telegram o lo streaming è preferibile, mantieni overlay + fallback
-            if (!isTelegram && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            // Prova overlay getUserMedia anche in Telegram; fallback a input
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             // Pulsante Fotocamera - apre la fotocamera
             cameraBtn.addEventListener('click', async function() {
                 try {
