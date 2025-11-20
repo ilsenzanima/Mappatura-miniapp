@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FireBlock • Riepilogo Dati</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --tg-bg: var(--tg-theme-bg-color, #ffffff);
+            --tg-text: var(--tg-theme-text-color, #000000);
+            --tg-hint: var(--tg-theme-hint-color, #999999);
+            --tg-button: var(--tg-theme-button-color, #007bff);
+            --tg-button-text: var(--tg-theme-button-text-color, #ffffff);
+            --tg-secondary: var(--tg-theme-secondary-bg-color, #f0f0f0);
+        }
+        body { 
+            margin: 0; 
+            padding: 20px; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--tg-bg); 
+            color: var(--tg-text); 
+        }
+        .wrapper { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+        }
+        h1 { 
+            margin: 0 0 20px; 
+            font-size: 24px; 
+            text-align: center; 
+        }
+        .loading { 
+            text-align: center; 
+            color: var(--tg-hint); 
+            padding: 40px; 
+        }
+        .error { 
+            background: #ffebee; 
+            color: #c62828; 
+            padding: 16px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            text-align: center; 
+        }
+        .table-container {
+            background: var(--tg-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--tg-hint);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--tg-hint);
+        }
+        th {
+            background: var(--tg-button);
+            color: var(--tg-button-text);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        tr:hover {
+            background: rgba(0, 123, 255, 0.05);
+        }
+        .piano-col { font-weight: 600; }
+        .numero-col { text-align: center; }
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: var(--tg-hint);
+        }
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            background: var(--tg-button);
+            color: var(--tg-button-text);
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .refresh-btn:active {
+            transform: scale(0.95);
+        }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            table { font-size: 12px; }
+            th, td { padding: 8px 4px; }
+            .refresh-btn { bottom: 10px; right: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <h1>📊 Riepilogo Dati</h1>
+        <div id="content">
+            <div class="loading">Caricamento dati...</div>
+        </div>
+    </div>
+    
+    <button id="refresh-btn" class="refresh-btn" title="Aggiorna">🔄</button>
+
+    <script>
+        const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+        const contentEl = document.getElementById('content');
+        const refreshBtn = document.getElementById('refresh-btn');
+        
+        // Costruisci URL del webhook n8n
+        const webhookUrl = 'https://n8n.fire-block.org/webhook/riepilogo';
+
+        function applyTheme() {
+            if (!tg) return;
+            const p = tg.themeParams || {};
+            document.documentElement.style.setProperty('--tg-theme-bg-color', p.bg_color || '#ffffff');
+            document.documentElement.style.setProperty('--tg-theme-text-color', p.text_color || '#000000');
+            document.documentElement.style.setProperty('--tg-theme-hint-color', p.hint_color || '#999999');
+            document.documentElement.style.setProperty('--tg-theme-button-color', p.button_color || '#0088cc');
+            document.documentElement.style.setProperty('--tg-theme-button-text-color', p.button_text_color || '#ffffff');
+            document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', p.secondary_bg_color || '#f0f0f0');
+        }
+
+        async function loadData() {
+            contentEl.innerHTML = '<div class="loading">Caricamento dati...</div>';
+            
+            try {
+                const response = await fetch(webhookUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                renderTable(data);
+                
+            } catch (error) {
+                console.error('Errore nel caricamento:', error);
+                contentEl.innerHTML = `
+                    <div class="error">
+                        ❌ Errore nel caricamento dei dati<br>
+                        <small>${error.message}</small>
+                    </div>
+                `;
+            }
+        }
+
+        function renderTable(data) {
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                contentEl.innerHTML = '<div class="empty">📋 Nessun dato disponibile</div>';
+                return;
+            }
+
+            // Ordina per piano (come richiesto)
+            const sortedData = [...data].sort((a, b) => {
+                const pianoA = String(a.Piano || a.piano || '').padStart(3, '0');
+                const pianoB = String(b.Piano || b.piano || '').padStart(3, '0');
+                return pianoA.localeCompare(pianoB);
+            });
+
+            const tableHtml = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Piano</th>
+                                <th>N Foto</th>
+                                <th>Descrizione</th>
+                                <th>Supporto</th>
+                                <th>Dimensioni</th>
+                                <th>Note</th>
+                                <th>P/S</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${sortedData.map(row => `
+                                <tr>
+                                    <td class="piano-col">${escapeHtml(row.Piano || row.piano || '-')}</td>
+                                    <td class="numero-col">${escapeHtml(row['N Foto'] || row.numero || '-')}</td>
+                                    <td>${escapeHtml(row.Descrizione || row.descrizione || row['Descrizione '] || '-')}</td>
+                                    <td>${escapeHtml(row.Supporto || row.supporto || '-')}</td>
+                                    <td>${escapeHtml(row.Dimensioni || row.dimensioni || '-')}</td>
+                                    <td>${escapeHtml(row.Note || row.note || '-')}</td>
+                                    <td>${escapeHtml(row['P / S'] || row['P/S'] || row.parete_solaio || '-')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div style="text-align: center; margin-top: 16px; color: var(--tg-hint); font-size: 12px;">
+                    Totale record: ${sortedData.length}
+                </div>
+            `;
+
+            contentEl.innerHTML = tableHtml;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        refreshBtn.addEventListener('click', () => {
+            if (tg) {
+                tg.HapticFeedback?.impactOccurred('light');
+            }
+            loadData();
+        });
+
+        (function init() {
+            if (tg) {
+                tg.ready();
+                tg.expand();
+            }
+            applyTheme();
+            loadData();
+        })();
+    </script>
+</body>
+</html>

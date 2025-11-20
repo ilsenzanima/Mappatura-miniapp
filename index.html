@@ -34,6 +34,10 @@
             <button id="open-browser" class="btn">Apri nel browser</button>
             <div id="hint" class="small"></div>
         </div>
+        <div class="card">
+            <p>Visualizza tutti i dati archiviati ordinati per piano.</p>
+            <button id="riepilogo-btn" class="btn">📊 Riepilogo</button>
+        </div>
     </div>
 
     <script>
@@ -85,6 +89,16 @@
                     try { tg.CloudStorage?.setItem('opened_app', Date.now().toString()); } catch (e) {}
                 } else {
                     window.open(appUrl, '_blank');
+                }
+            });
+            
+            document.getElementById('riepilogo-btn').addEventListener('click', () => {
+                const riepilogoUrl = new URL('./riepilogo.html', location.href).toString();
+                if (tg) {
+                    tg.HapticFeedback?.impactOccurred('soft');
+                    tg.openLink(riepilogoUrl);
+                } else {
+                    window.open(riepilogoUrl, '_blank');
                 }
             });
         }
