@@ -339,9 +339,9 @@
                 <div class="camera-container">
                     <video id="camera-video" autoplay playsinline></video>
                     <div class="overlay-controls">
-                        <button type="button" id="capture-btn" class="camera-button">Scatta</button>
-                        <button type="button" id="capture-another" class="camera-button">Scatta un'altra</button>
-                        <button type="button" id="cancel-camera" class="camera-button">Annulla</button>
+                <button type="button" id="capture-btn" class="camera-button">Scatta</button>
+                <button type="button" id="capture-another" class="camera-button">Scatta un'altra</button>
+                <button type="button" id="cancel-camera" class="camera-button">Indietro</button>
                     </div>
                 </div>
             </div>
@@ -750,7 +750,7 @@
                 videoEl.srcObject = stream;
                 overlay.classList.add('active');
 
-                const doCapture = async () => {
+                const doCapture = async (closeAfter) => {
                     const canvas = document.createElement('canvas');
                     const w = videoEl.videoWidth || 1920;
                     const h = videoEl.videoHeight || 1080;
@@ -769,7 +769,17 @@
                     dataTransfer.items.add(processedFile);
                     photoInput.files = dataTransfer.files;
                     photoInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    statusDiv.textContent = `Foto acquisita`;
+                    statusDiv.textContent = closeAfter ? `Foto scattata` : `Foto scattata, puoi scattarne un'altra`;
+                    if (closeAfter) {
+                        overlay.classList.remove('active');
+                        if (videoEl.srcObject) {
+                            videoEl.srcObject.getTracks().forEach(t => t.stop());
+                            videoEl.srcObject = null;
+                        }
+                        captureBtn.replaceWith(captureBtn.cloneNode(true));
+                        captureAnotherBtn.replaceWith(captureAnotherBtn.cloneNode(true));
+                        cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+                    }
                 };
 
                 const onCancel = () => {
@@ -778,13 +788,10 @@
                         videoEl.srcObject.getTracks().forEach(t => t.stop());
                         videoEl.srcObject = null;
                     }
-                    captureBtn.removeEventListener('click', doCapture);
-                    captureAnotherBtn.removeEventListener('click', doCapture);
-                    cancelBtn.removeEventListener('click', onCancel);
                 };
 
-                captureBtn.addEventListener('click', doCapture);
-                captureAnotherBtn.addEventListener('click', doCapture);
+                captureBtn.addEventListener('click', () => doCapture(true));
+                captureAnotherBtn.addEventListener('click', () => doCapture(false));
                 cancelBtn.addEventListener('click', onCancel);
             }
             
