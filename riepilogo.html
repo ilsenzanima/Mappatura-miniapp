@@ -139,16 +139,23 @@
             try {
                 const response = await fetch(webhookUrl, {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
+                    cache: 'no-cache'
                 });
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
 
-                const data = await response.json();
+                const raw = await response.text();
+                let data = [];
+                if (raw && raw.trim().length > 0) {
+                    try {
+                        data = JSON.parse(raw);
+                    } catch (e) {
+                        throw new Error(`Risposta non JSON (${raw.slice(0, 200)}...)`);
+                    }
+                }
+
                 renderTable(data);
                 
             } catch (error) {
