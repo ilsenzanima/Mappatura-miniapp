@@ -190,6 +190,7 @@
                                 <th>Piano</th>
                                 <th>N Foto</th>
                                 <th>Descrizione</th>
+                                <th>N interventi</th>
                                 <th>Supporto</th>
                                 <th>Dimensioni</th>
                                 <th>Note</th>
@@ -202,6 +203,7 @@
                                     <td class="piano-col">${escapeHtml(row.Piano || row.piano || '-')}</td>
                                     <td class="numero-col">${escapeHtml(row['N Foto'] || row.numero || '-')}</td>
                                     <td>${escapeHtml(row.Descrizione || row.descrizione || row['Descrizione '] || '-')}</td>
+                                    <td class="numero-col">${escapeHtml(row['N interventi'] || row.quantita || '-')}</td>
                                     <td>${escapeHtml(row.Supporto || row.supporto || '-')}</td>
                                     <td>${escapeHtml(row.Dimensioni || row.dimensioni || '-')}</td>
                                     <td>${escapeHtml(row.Note || row.note || '-')}</td>
