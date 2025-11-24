@@ -679,6 +679,12 @@
                 formData.append('timestamp', new Date().toISOString());
                 formData.append('attraversamenti', JSON.stringify(attraversamentiData));
 
+                if (attraversamentiData.length > 0) {
+                    formData.append('tipo', attraversamentiData[0].tipo || '');
+                    formData.append('quantita', attraversamentiData[0].quantita || '');
+                    formData.append('dimensioni', attraversamentiData[0].dimensioni || '');
+                }
+
                 // Crea controller per timeout
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi timeout
