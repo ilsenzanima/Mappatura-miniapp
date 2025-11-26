@@ -1,0 +1,479 @@
+{
+  "name": "Sopraluoghi e Mappature",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "8103bcd7-6fd9-4b7c-b7df-6347ae7827c6",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1zRd2-XYBtQzp-yCS5N9THTBSoRynJt0um1XZRjnv39I",
+          "mode": "list",
+          "cachedResultName": "sopraluogo",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zRd2-XYBtQzp-yCS5N9THTBSoRynJt0um1XZRjnv39I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Raccolta dati",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zRd2-XYBtQzp-yCS5N9THTBSoRynJt0um1XZRjnv39I/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Piano": "={{ $('Respond to Webhook').item.json.body.piano }}",
+            "Supporto": "={{ $('Respond to Webhook').item.json.body.supporto }}",
+            "N Foto": "={{ $('Respond to Webhook').item.json.body.numero }}",
+            "Spessore supporto": "={{ $('Respond to Webhook').item.json.body.dimensioniCm }}",
+            "Descrizione ": "={{ $json.tipo }}",
+            "Note": "={{ $('Respond to Webhook').item.json.body.notes }}",
+            "Dimensioni": "={{ $json.dimensioni }}",
+            "N interventi": "={{ $json.quantita }}",
+            "P / S": "={{ $('Respond to Webhook').item.json.body.parete_solaio }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "N Foto",
+              "displayName": "N Foto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Piano",
+              "displayName": "Piano",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "P / S",
+              "displayName": "P / S",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Supporto",
+              "displayName": "Supporto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Spessore supporto",
+              "displayName": "Spessore supporto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Descrizione ",
+              "displayName": "Descrizione ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "N interventi",
+              "displayName": "N interventi",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Dimensioni",
+              "displayName": "Dimensioni",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Note",
+              "displayName": "Note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1760,
+        0
+      ],
+      "id": "390c38f1-548e-4d17-bbe1-22eac7a4b170",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pqjKweYkeQ4jeeKb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "=photo",
+        "name": "={{ $json.body.piano }}_{{ $json.body.numero }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1fLzgVlWaa4_gl1d56StyP6JB507F7-mn",
+          "mode": "list",
+          "cachedResultName": "Sopraluoghi",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1fLzgVlWaa4_gl1d56StyP6JB507F7-mn"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1552,
+        -160
+      ],
+      "id": "5f145fff-4c85-4361-93ef-1f8a1df01fc3",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "eTUpOTvQ5fG15rMc",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "attraversamenti",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        64
+      ],
+      "id": "8c01f552-a7db-4d41-929a-6e8147a3c3a4",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a01a66c2-649f-44db-b5ea-ab9550bb7323",
+              "name": "attraversamenti",
+              "value": "={{ $json.body.attraversamenti }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        912,
+        64
+      ],
+      "id": "c8f7755b-c962-4343-bd35-2c21e5682e07",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "miniapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f7669f3a-3c28-4549-a30e-9afd5c4e667b",
+      "name": "Webhook",
+      "webhookId": "7ca269b6-8d88-4a58-9fc8-13091dc4ad53"
+    },
+    {
+      "parameters": {
+        "path": "riepilogo",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        368
+      ],
+      "id": "c1ab01b4-72c9-421d-992e-2c0061c54748",
+      "name": "Webhook1",
+      "webhookId": "d1b8bf02-23c7-4a84-858e-211aca0a2ba4"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1zRd2-XYBtQzp-yCS5N9THTBSoRynJt0um1XZRjnv39I",
+          "mode": "list",
+          "cachedResultName": "sopraluogo",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zRd2-XYBtQzp-yCS5N9THTBSoRynJt0um1XZRjnv39I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Raccolta dati",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zRd2-XYBtQzp-yCS5N9THTBSoRynJt0um1XZRjnv39I/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        416,
+        368
+      ],
+      "id": "afc6232f-4393-441d-a362-ec68aec0a60e",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pqjKweYkeQ4jeeKb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        224
+      ],
+      "id": "6789d262-d50d-4204-a317-3b2de8e354fa",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "80c221a2-7d6c-4bf4-9bba-fc53b130be05",
+              "name": "N Foto",
+              "value": "={{ $json['N Foto'] }}",
+              "type": "number"
+            },
+            {
+              "id": "94118932-c1e6-4809-8bbe-4a69305eb4ef",
+              "name": "Piano",
+              "value": "={{ $json.Piano }}",
+              "type": "number"
+            },
+            {
+              "id": "301e274c-9454-4b4e-990a-d874947ab966",
+              "name": "Descrizione ",
+              "value": "={{ $json['Descrizione '] }}",
+              "type": "number"
+            },
+            {
+              "id": "e710775c-3845-4690-8e76-f8d4afb1ba61",
+              "name": "N interventi",
+              "value": "={{ $json['N interventi'] }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        368
+      ],
+      "id": "e27d1561-0f16-4fa9-a8f1-478c7c585509",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        832,
+        368
+      ],
+      "id": "871f1a41-30aa-459b-bf25-96f6ab34f35d",
+      "name": "Respond to Webhook1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "Upload file": {
+      "main": [
+        []
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook1": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "timezone": "Europe/Rome"
+  },
+  "versionId": "8b37e8f9-41de-47cf-be77-b18e1cabf405",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a3097e93661a9814fc819138841910f8ebb5db07390ec12388eece4007233991"
+  },
+  "id": "sFUFRGNbln3k6DyO",
+  "tags": []
+}
