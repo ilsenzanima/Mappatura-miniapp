@@ -323,11 +323,6 @@
         </div>
 
         <div class="form-group">
-            <label for="n-tipologico-input">N Tipologico</label>
-            <input type="number" id="n-tipologico-input" name="n_tipologico" placeholder="Inserisci N tipologico">
-        </div>
-
-        <div class="form-group">
             <label for="notes">Note Aggiuntive</label>
             <textarea id="notes" name="notes" rows="3" placeholder="Aggiungi dettagli qui..."></textarea>
         </div>
@@ -353,7 +348,7 @@
 
     <script>
         // --- CONFIGURAZIONE ---
-        const N8N_WEBHOOK_URL = 'https://n8n.fire-block.org/webhook/miniapp';
+        const N8N_WEBHOOK_URL = 'https://n8n.fire-block.org/webhook-test/miniapp';
 
         // Dati CSV locali
         const PIANO_DATA = ['P -3','P -2','P -1','P 0','P 1','P 2','P 3','P 4','P 5','P 6','P 7','P 8','P 9','P 10','P 11','P 12','P 13','P 14','P 15','P 16','P 17','P 18','P 19','P 20','P 21','P 22','P 23'];
@@ -490,6 +485,10 @@
                 <div class="form-group">
                     <label>${isFirstRow ? 'Dimensioni/Diametro' : ''}</label>
                     <input type="text" class="dimensioni-diametro-input" name="dimensioni_diametro" placeholder="Es: 100mm">
+                </div>
+                <div class="form-group">
+                    <label>${isFirstRow ? 'N Tipologico' : ''}</label>
+                    <input type="number" class="n-tipologico-input" name="n_tipologico" placeholder="Es: 0112">
                 </div>
                 ${removeButtonHTML}
             `;
@@ -648,7 +647,6 @@
                 const selectedPareteSolaio = document.getElementById('parete-solaio-select').value;
                 const selectedSupporto = document.getElementById('supporto-select').value;
                 const dimensioniCm = document.getElementById('dimensioni-cm-input').value;
-                const nTipologico = document.getElementById('n-tipologico-input').value;
                 const notes = document.getElementById('notes').value;
 
                 const attraversamentiData = [];
@@ -656,11 +654,13 @@
                     const select = row.querySelector('.attraversamento-select');
                     const quantitaInput = row.querySelector('.quantita-input');
                     const dimensioniInput = row.querySelector('.dimensioni-diametro-input');
+                    const nTipologicoInput = row.querySelector('.n-tipologico-input');
                     if (select.value) {
                         attraversamentiData.push({ 
                             tipo: select.value, 
                             quantita: quantitaInput.value,
-                            dimensioni: dimensioniInput.value || ''
+                            dimensioni: dimensioniInput.value || '',
+                            n_tipologico: (nTipologicoInput && nTipologicoInput.value) || ''
                         });
                     }
                 });
@@ -673,7 +673,6 @@
                 formData.append('parete_solaio', selectedPareteSolaio);
                 formData.append('supporto', selectedSupporto);
                 formData.append('dimensioniCm', dimensioniCm || '');
-                formData.append('n_tipologico', nTipologico || '');
                 formData.append('notes', notes || '');
                 formData.append('telegramUser', tg ? JSON.stringify(tg.initDataUnsafe?.user) : '');
                 formData.append('timestamp', new Date().toISOString());
@@ -683,6 +682,7 @@
                     formData.append('tipo', attraversamentiData[0].tipo || '');
                     formData.append('quantita', attraversamentiData[0].quantita || '');
                     formData.append('dimensioni', attraversamentiData[0].dimensioni || '');
+                    formData.append('n_tipologico', attraversamentiData[0].n_tipologico || '');
                 }
 
                 // Crea controller per timeout
