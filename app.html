@@ -389,15 +389,18 @@
         let opzioniSupporti = [];
 
         /**
-         * Funzione semplificata per caricare i dati da un URL
-         * @param {string} url - L'URL del foglio CSV
-         * @returns {Promise<string[]>} - Una lista di opzioni
+         * Carica i dati da un CSV (stessa origine o URL) e ritorna la prima riga
+         * @param {string} url - Percorso relativo (es. 'supporto.csv') o URL assoluto
+         * @returns {Promise<string[]>} - Lista di opzioni
          */
         async function fetchData(url) {
-            if (!url || !url.startsWith('https')) {
+            if (!url) {
                 throw new Error(`URL non valido: ${url}`);
             }
-            const response = await fetch(url);
+            // Cache-busting per assicurare aggiornamenti immediati
+            const sep = url.includes('?') ? '&' : '?';
+            const withBust = `${url}${sep}v=${Date.now()}`;
+            const response = await fetch(withBust, { cache: 'no-store' });
             if (!response.ok) {
                 throw new Error(`Errore di rete per ${url}`);
             }
@@ -430,11 +433,18 @@
             }
             
             try {
-                // Usa i dati locali
-                opzioniPiani = PIANO_DATA;
-                opzioniPareteSolaio = PARETE_SOLAIO_DATA;
-                opzioniSupporti = SUPPORTO_DATA;
-                opzioniAttraversamenti = ATTRAVERSAMENTI_DATA;
+                // Prova a caricare i CSV locali, altrimenti fallback ai dati hardcoded
+                const [piani, pareteSolaio, supporti, attraversamenti] = await Promise.all([
+                    fetchData('piani.csv').catch(() => PIANO_DATA),
+                    fetchData('ps.csv').catch(() => PARETE_SOLAIO_DATA),
+                    fetchData('supporto.csv').catch(() => SUPPORTO_DATA),
+                    fetchData('attraversamenti.csv').catch(() => ATTRAVERSAMENTI_DATA)
+                ]);
+
+                opzioniPiani = piani;
+                opzioniPareteSolaio = pareteSolaio;
+                opzioniSupporti = supporti;
+                opzioniAttraversamenti = attraversamenti;
 
                 // Popola il menu "Piano"
                 const pianoSelect = document.getElementById('piano-select');
