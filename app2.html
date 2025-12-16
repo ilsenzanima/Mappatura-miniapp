@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Lavoro</title>
+    <!-- FIX: Re-inserito lo script di Telegram, fondamentale per il funzionamento -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --tg-bg: var(--tg-theme-bg-color, #ffffff);
+            --tg-text: var(--tg-theme-text-color, #000000);
+            --tg-hint: var(--tg-theme-hint-color, #999999);
+            --tg-button: var(--tg-theme-button-color, #007bff);
+            --tg-button-text: var(--tg-theme-button-text-color, #ffffff);
+            --tg-secondary-bg: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            --danger-color: #dc3545;
+            --danger-text-color: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px;
+            background-color: var(--tg-bg);
+            color: var(--tg-text);
+            margin: 0;
+        }
+        h1 {
+            margin-top: 0;
+            text-align: center;
+        }
+        .form-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            flex: 1;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--tg-hint);
+            background-color: var(--tg-secondary-bg);
+            color: var(--tg-text);
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        /* Stile per i campi con errori */
+        input.field-error, select.field-error, textarea.field-error {
+            border-color: var(--danger-color);
+        }
+        /* Stili per il container della foto */
+        .photo-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+        .photo-input-container input[type="file"] {
+            flex: 1;
+            pointer-events: none;
+            cursor: default;
+        }
+        .photo-input-container input[type="file"]::-webkit-file-upload-button {
+            display: none;
+        }
+        .photo-input-container input[type="file"]::file-selector-button {
+            display: none;
+        }
+       .photo-preview {
+            display: none; 
+            margin-top: 10px;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid var(--tg-hint);
+            border-radius: 8px;
+            background-color: var(--tg-secondary-bg);
+            overflow: hidden;
+            max-height: 250px;
+            padding: 5px;
+        }
+        .photo-preview.active {
+            display: flex; 
+        }
+        .photo-preview img {
+        max-width: 100%; 
+        max-height: 240px; 
+        object-fit: contain; 
+        border-radius: 6px;
+        }
+        .camera-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background-color: var(--tg-button-color, #0088cc);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            min-width: 120px;
+            width: auto;
+        }
+        .camera-button:hover {
+            background-color: var(--tg-button-color, #006ba3);
+            transform: translateY(-1px);
+        }
+        .camera-button:active {
+            transform: translateY(0);
+        }
+        .camera-button svg {
+            flex-shrink: 0;
+        }
+        .help-text {
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+            color: var(--tg-hint, #999);
+            font-style: italic;
+        }
+        /* Responsive design per dispositivi mobili */
+        @media (max-width: 480px) {
+            .form-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+        @media (max-width: 480px) {
+            .photo-input-container {
+                flex-direction: column;
+            }
+            .camera-button {
+                width: 100%;
+                min-width: unset;
+                margin-bottom: 8px;
+            }
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--tg-button);
+            color: var(--tg-button-text);
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .action-btn {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            font-size: 24px;
+            flex-shrink: 0;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 480px) {
+            .controls-container {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .action-btn {
+                width: 100%;
+            }
+        }
+        .add-btn {
+            background-color: var(--tg-button);
+            color: var(--tg-button-text);
+        }
+        .remove-btn {
+            background-color: var(--danger-color);
+            color: var(--danger-text-color);
+        }
+        .controls-container {
+            display: flex;
+            gap: 10px;
+            margin-top: -10px;
+            margin-bottom: 20px;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        #status {
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        .submit-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        @media (max-width: 480px) {
+            .submit-container {
+                flex-direction: column;
+            }
+            .reload-btn {
+                width: 100%;
+                min-width: unset;
+            }
+        }
+
+        .reload-btn {
+            background-color: var(--tg-hint, #999999);
+            color: white;
+            font-size: 14px;
+            padding: 12px 16px;
+            width: auto;
+            min-width: 140px;
+            flex-shrink: 0;
+        }
+        .reload-btn:hover {
+            background-color: var(--tg-hint, #777777);
+        }
+        @media (max-width: 480px) {
+            .submit-container {
+                flex-direction: column;
+            }
+            .reload-btn {
+                width: 100%;
+                min-width: unset;
+            }
+        }
+        @media (max-width: 480px) {
+            input, select, textarea {
+                padding: 10px;
+                font-size: 14px;
+            }
+            .camera-button {
+                font-size: 13px;
+                padding: 10px;
+            }
+            button {
+                font-size: 15px;
+                padding: 12px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    
+    <h1>Invia Report Intervento</h1>
+
+    <form id="report-form">
+        <div class="form-group">
+            <label for="photo">Allega Foto</label>
+            <div class="photo-input-container">
+                <button type="button" id="camera-btn" class="camera-button" title="Scatta una foto">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                    <span>Fotocamera</span>
+                </button>
+                <button type="button" id="gallery-btn" class="camera-button" title="Seleziona dalla galleria">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21,15 16,10 5,21"></polyline>
+                    </svg>
+                    <span>Galleria</span>
+                </button>
+                <input type="file" id="photo" name="photo" accept="image/*" required>
+            </div>
+
+            <!-- Anteprima immagine -->
+                <div id="photo-preview" class="photo-preview"></div>
+
+            <small class="help-text">Fotocamera: scatta nuova foto • Galleria: seleziona foto esistente</small>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="piano-select">Piano</label>
+                <select id="piano-select" name="piano" required>
+                    <option value="">Caricamento...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="numero-input">Numero Identificativo</label>
+                <input type="number" id="numero-input" name="numero" placeholder="Inserisci un numero" required>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="supporto-select">Supporto</label>
+                <select id="supporto-select" name="supporto" required>
+                    <option value="">Caricamento...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="dimensioni-cm-input">Dimensioni CM</label>
+                <input type="text" id="dimensioni-cm-input" name="dimensioni_cm" placeholder="Es: 10x20">
+            </div>
+        </div>
+
+        <div id="attraversamenti-container">
+            <!-- Le righe verranno aggiunte qui da JavaScript -->
+        </div>
+        <div class="controls-container">
+            <button type="button" id="add-attraversamento-btn" class="action-btn add-btn">+</button>
+        </div>
+
+        <div class="form-group">
+            <label for="notes">Note Aggiuntive</label>
+            <textarea id="notes" name="notes" rows="3" placeholder="Aggiungi dettagli qui..."></textarea>
+        </div>
+
+        <div class="submit-container">
+            <button type="submit" id="submit-btn">Invia Dati</button>
+            <button type="button" id="reload-btn" class="reload-btn">🔄 Ricarica Pagina</button>
+        </div>
+    </form>
+
+    <div id="status"></div>
+
+    <script>
+        // --- CONFIGURAZIONE ---
+        const N8N_WEBHOOK_URL = 'https://n8n.fire-block.org/webhook/miniapp'; // Miniapp webhook
+
+        // Dati CSV locali
+        const PIANO_DATA = ['P -3','P -2','P -1','P 0','P 1','P 2','P 3','P 4','P 5','P 6','P 7','P 8','P 9','P 10','P 11','P 12','P 13','P 14','P 15','P 16','P 17','P 18','P 19','P 20','P 21','P 22','P 23'];
+        const PARETE_SOLAIO_DATA = ['Parete','Solaio'];
+        const SUPPORTO_DATA = ['Flessibile','Laterizio intonacato','Laterizio non intonacato','CLS','Leca','Cemento armato','Legno'];
+        const ATTRAVERSAMENTI_DATA = ['Cavi/Corrugati','Canalina passacavi','Scatola elettrica','Tubo combustibile','Tubo multistrato','Tubo RAME','Tubo incombustibile NUDO','Tubo incombustibile ISOLATO lana','Tubo incombustibile ISOLATO combustibile','Serranda','Barra armata'];
+        // --------------------
+
+        // Inizializza l'oggetto Telegram Web App in modo sicuro
+        let tg;
+        try {
+            tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+            
+            // Configura tema
+            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+            document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#0088cc');
+            
+            console.log('Telegram WebApp rilevato - configurazione fotocamera ottimizzata');
+        } catch (e) {
+            console.error("Impossibile inizializzare l'API di Telegram", e);
+            console.log('Browser web rilevato - input file per selezione, pulsante per fotocamera');
+        }
+
+        const form = document.getElementById('report-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const attraversamentiContainer = document.getElementById('attraversamenti-container');
+        const addAttraversamentoBtn = document.getElementById('add-attraversamento-btn');
+        const statusDiv = document.getElementById('status');
+
+        let opzioniPiani = [];
+        let opzioniAttraversamenti = [];
+        let opzioniSupporti = [];
+
+        /**
+         * Carica i dati da un CSV (stessa origine o URL) e ritorna la prima riga
+         * @param {string} url - Percorso relativo (es. 'supporto.csv') o URL assoluto
+         * @returns {Promise<string[]>} - Lista di opzioni
+         */
+        async function fetchData(url) {
+            if (!url) {
+                throw new Error(`URL non valido: ${url}`);
+            }
+            // Cache-busting per assicurare aggiornamenti immediati
+            const sep = url.includes('?') ? '&' : '?';
+            const withBust = `${url}${sep}v=${Date.now()}`;
+            const response = await fetch(withBust, { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error(`Errore di rete per ${url}`);
+            }
+            const csvText = await response.text();
+            // Legge la prima riga e la divide per virgola
+            return csvText.split(/\r?\n/)[0].split(',').map(item => item.trim()).filter(item => item);
+        }
+
+        /**
+         * Verifica la configurazione del webhook
+         */
+        async function checkWebhookConfiguration() {
+            if (!N8N_WEBHOOK_URL || N8N_WEBHOOK_URL.includes('your-webhook-url-here')) {
+                statusDiv.textContent = 'ERRORE: URL webhook non configurato!';
+                console.error('Il webhook N8N non è configurato. Contatta l\'amministratore.');
+                return false;
+            }
+            return true;
+        }
+
+        /**
+         * Popola tutti i menu a tendina
+         */
+        async function populateDropdowns() {
+            statusDiv.textContent = 'Caricamento dati...';
+            
+            // Verifica configurazione webhook
+            if (!await checkWebhookConfiguration()) {
+                return;
+            }
+            
+            try {
+                // Prova a caricare i CSV locali, altrimenti fallback ai dati hardcoded
+                const [piani, supporti, attraversamenti] = await Promise.all([
+                    fetchData('piani.csv').catch(() => PIANO_DATA),
+                    fetchData('supporto.csv').catch(() => SUPPORTO_DATA),
+                    fetchData('attraversamenti.csv').catch(() => ATTRAVERSAMENTI_DATA)
+                ]);
+
+                opzioniPiani = piani;
+                opzioniSupporti = supporti;
+                opzioniAttraversamenti = attraversamenti;
+
+                // Popola il menu "Piano"
+                const pianoSelect = document.getElementById('piano-select');
+                pianoSelect.innerHTML = '<option value="">Seleziona Piano</option>';
+                opzioniPiani.forEach(item => pianoSelect.add(new Option(item, item)));
+
+                // Popola il menu "Supporto"
+                const supportoSelect = document.getElementById('supporto-select');
+                supportoSelect.innerHTML = '<option value="">Seleziona Supporto</option>';
+                opzioniSupporti.forEach(item => supportoSelect.add(new Option(item, item)));
+                
+                // Aggiunge la prima riga di attraversamento
+                addAttraversamentoRow(true);
+                statusDiv.textContent = '';
+
+            } catch (error) {
+                console.error('Errore nel popolare i dropdown:', error);
+                statusDiv.textContent = 'Errore nel caricamento dati.';
+            }
+        }
+        
+        /**
+         * Aggiunge una riga per un nuovo attraversamento
+         * @param {boolean} isFirstRow - Indica se è la prima riga (non avrà il pulsante -)
+         */
+        function addAttraversamentoRow(isFirstRow = false) {
+            const newRow = document.createElement('div');
+            newRow.className = 'form-row attraversamento-row';
+            
+            const removeButtonHTML = isFirstRow 
+                ? '' 
+                : '<button type="button" class="action-btn remove-btn">-</button>';
+
+            newRow.innerHTML = `
+                <div class="form-group">
+                    <label>${isFirstRow ? 'Attraversamento' : ''}</label>
+                    <select class="attraversamento-select" name="attraversamento" required>
+                        <option value="">Seleziona...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>${isFirstRow ? 'Quantità' : ''}</label>
+                    <input type="number" class="quantita-input" name="quantita" placeholder="Qtà" required value="1">
+                </div>
+                <div class="form-group">
+                    <label>${isFirstRow ? 'Dimensioni/Diametro' : ''}</label>
+                    <input type="text" class="dimensioni-diametro-input" name="dimensioni_diametro" placeholder="Es: 100mm">
+                </div>
+                ${removeButtonHTML}
+            `;
+            
+            attraversamentiContainer.appendChild(newRow);
+            
+            const newSelect = newRow.querySelector('.attraversamento-select');
+            opzioniAttraversamenti.forEach(item => newSelect.add(new Option(item, item)));
+        }
+
+        // Event listener per il pulsante "+"
+        addAttraversamentoBtn.addEventListener('click', () => addAttraversamentoRow());
+
+        // Event listener per i pulsanti "-"
+        attraversamentiContainer.addEventListener('click', function(event) {
+            if (event.target.classList.contains('remove-btn')) {
+                event.target.closest('.attraversamento-row').remove();
+            }
+        });
+
+        /**
+         * Converte un file in ArrayBuffer per invio binario
+         * @param {File} file - Il file da convertire
+         * @returns {Promise<ArrayBuffer>}
+         */
+        function fileToArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsArrayBuffer(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        /**
+         * Converte un file in una stringa Base64 (fallback)
+         * @param {File} file - Il file da convertire
+         * @returns {Promise<string>}
+         */
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        /**
+         * Funzione per validare il form prima dell'invio
+         * @returns {boolean} - True se il form è valido, altrimenti False
+         */
+        function validateForm() {
+            let isValid = true;
+            // Rimuove tutti gli errori precedenti
+            document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+
+            // Controlla tutti i campi 'required'
+            form.querySelectorAll('[required]').forEach(input => {
+                if (!input.value) {
+                    isValid = false;
+                    input.classList.add('field-error');
+                }
+            });
+
+            if (!isValid) {
+                statusDiv.textContent = 'Compila tutti i campi evidenziati.';
+                console.warn('Per favore, compila tutti i campi obbligatori.');
+                return;
+            }
+            
+            return isValid;
+        }
+
+        // Event listener per l'invio del form
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!validateForm()) return;
+
+            submitBtn.disabled = true;
+            statusDiv.textContent = 'Invio in corso...';
+
+            try {
+                // Raccoglie tutti i dati dal form
+                const photoFile = document.getElementById('photo').files[0];
+                const selectedPiano = document.getElementById('piano-select').value;
+                const numero = document.getElementById('numero-input').value;
+                const selectedSupporto = document.getElementById('supporto-select').value;
+                const dimensioniCm = document.getElementById('dimensioni-cm-input').value;
+                const notes = document.getElementById('notes').value;
+
+                const attraversamentiData = [];
+                document.querySelectorAll('.attraversamento-row').forEach(row => {
+                    const select = row.querySelector('.attraversamento-select');
+                    const quantitaInput = row.querySelector('.quantita-input');
+                    const dimensioniInput = row.querySelector('.dimensioni-diametro-input');
+                    if (select.value) {
+                        attraversamentiData.push({ 
+                            tipo: select.value, 
+                            quantita: quantitaInput.value,
+                            dimensioni: dimensioniInput.value || ''
+                        });
+                    }
+                });
+
+                // Crea FormData per invio binario
+                const formData = new FormData();
+                formData.append('photo', photoFile);
+                formData.append('piano', selectedPiano);
+                formData.append('numero', numero);
+                formData.append('supporto', selectedSupporto);
+                formData.append('dimensioniCm', dimensioniCm || '');
+                formData.append('notes', notes || '');
+                formData.append('telegramUser', tg ? JSON.stringify(tg.initDataUnsafe?.user) : '');
+                formData.append('timestamp', new Date().toISOString());
+                formData.append('attraversamenti', JSON.stringify(attraversamentiData));
+
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Errore ${response.status}: ${response.statusText}`);
+                }
+
+                statusDiv.textContent = 'Report inviato con successo!';
+                console.log('Il tuo report è stato inviato correttamente.');
+                form.reset();
+                if (tg && tg.close) {
+                    tg.close();
+                }
+
+            } catch (error) {
+                console.error('Errore durante l\'invio:', error);
+                
+                let errorMessage = 'Si è verificato un errore durante l\'invio del report.';
+                let alertMessage = errorMessage;
+                
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    errorMessage = 'Errore di connessione. Il webhook potrebbe non essere attivo.';
+                    alertMessage = 'Impossibile connettersi al server. Il webhook N8N potrebbe non essere attivo o configurato correttamente.';
+                } else if (error.message && error.message.includes('404')) {
+                    errorMessage = 'Webhook non trovato o non attivo.';
+                    alertMessage = 'Il webhook N8N non è registrato o attivo. Contatta l\'amministratore.';
+                } else if (error.message.includes('NetworkError')) {
+                    errorMessage = 'ERRORE: Impossibile raggiungere il server. Controlla la connessione.';
+                    alertMessage = 'Problema di connessione. Verifica la tua connessione internet e riprova.';
+                } else if (error.message.includes('500')) {
+                    errorMessage = 'ERRORE: Problema interno del server webhook.';
+                    alertMessage = 'Errore interno del server. Riprova tra qualche minuto.';
+                }
+                
+                statusDiv.textContent = errorMessage;
+                console.error('Errore invio:', alertMessage);
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Gestione pulsanti fotocamera e galleria
+        function setupCameraButtons() {
+            const cameraBtn = document.getElementById('camera-btn');
+            const galleryBtn = document.getElementById('gallery-btn');
+            const photoInput = document.getElementById('photo');
+            
+            if (!cameraBtn || !galleryBtn || !photoInput) return;
+            
+            // Pulsante Fotocamera - apre la fotocamera
+            cameraBtn.addEventListener('click', function() {
+                try {
+                    // Crea input temporaneo per fotocamera
+                    const tempInput = document.createElement('input');
+                    tempInput.type = 'file';
+                    tempInput.accept = 'image/*';
+                    tempInput.capture = 'environment'; // Forza apertura fotocamera
+                    tempInput.style.display = 'none';
+                    
+                    tempInput.addEventListener('change', function(e) {
+                        if (e.target.files && e.target.files[0]) {
+                            // Trasferisci il file all'input principale
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(e.target.files[0]);
+                            photoInput.files = dataTransfer.files;
+                            
+                            // Trigger change event sull'input principale
+                            photoInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            statusDiv.textContent = 'Foto acquisita dalla fotocamera';
+                        }
+                        document.body.removeChild(tempInput);
+                    });
+                    
+                    document.body.appendChild(tempInput);
+                    tempInput.click();
+                    statusDiv.textContent = 'Apertura fotocamera...';
+                    
+                } catch (error) {
+                    console.error('Errore apertura fotocamera:', error);
+                    statusDiv.textContent = 'Errore nell\'apertura della fotocamera';
+                }
+            });
+            
+                        
+            // Pulsante Galleria - apre la galleria
+            galleryBtn.addEventListener('click', function() {
+                try {
+                    // Crea input temporaneo per galleria
+                    const tempInput = document.createElement('input');
+                    tempInput.type = 'file';
+                    tempInput.accept = 'image/*';
+                    // NON impostare capture per aprire galleria
+                    tempInput.style.display = 'none';
+                    
+                    tempInput.addEventListener('change', function(e) {
+                        if (e.target.files && e.target.files[0]) {
+                            // Trasferisci il file all'input principale
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(e.target.files[0]);
+                            photoInput.files = dataTransfer.files;
+                            
+                            // Trigger change event sull'input principale
+                            photoInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            statusDiv.textContent = 'Foto selezionata dalla galleria';
+                        }
+                        document.body.removeChild(tempInput);
+                    });
+                    
+                    document.body.appendChild(tempInput);
+                    tempInput.click();
+                    statusDiv.textContent = 'Apertura galleria...';
+                    
+                } catch (error) {
+                    console.error('Errore apertura galleria:', error);
+                    statusDiv.textContent = 'Errore nell\'apertura della galleria';
+                }
+            });
+        }
+        // Anteprima immagine selezionata   
+        function setupImagePreview() {
+            const photoInput = document.getElementById('photo');
+            const photoPreview = document.getElementById('photo-preview');
+
+            if (!photoInput || !photoPreview) return;
+
+            photoInput.addEventListener('change', function () {
+                photoPreview.innerHTML = '';
+
+                if (this.files && this.files[0]) {
+                    const file = this.files[0];
+                    const img = document.createElement('img');
+                    const url = URL.createObjectURL(file);
+                    img.src = url;
+                    img.alt = 'Anteprima Foto';
+                    photoPreview.appendChild(img);
+
+                    img.onload = () => URL.revokeObjectURL(url);
+                    photoPreview.classList.add('active'); // Mostra il riquadro
+                } else {
+                    photoPreview.classList.remove('active'); // Nasconde il riquadro
+                }
+            });
+        }
+
+
+        // Avvia il caricamento dei dati quando la pagina è pronta
+        window.addEventListener('DOMContentLoaded', () => {
+            populateDropdowns();
+            setupCameraButtons();
+            setupImagePreview();
+            
+            // Setup pulsante reload
+            const reloadBtn = document.getElementById('reload-btn');
+            if (reloadBtn) {
+                reloadBtn.addEventListener('click', () => {
+                    window.location.reload();
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>
