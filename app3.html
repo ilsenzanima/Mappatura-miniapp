@@ -49,14 +49,6 @@
             box-shadow: none;
             background-color: #E5E5EA;
         }
-        /* Camera Overlay Styles */
-        .camera-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 9999; }
-        .camera-overlay.active { display: flex; }
-        .camera-container { display: flex; flex-direction: column; gap: 10px; align-items: center; width: 100%; max-width: 640px; padding: 20px; }
-        #camera-video { width: 100%; height: auto; border-radius: 8px; background: #000; }
-        .overlay-controls { display: flex; gap: 10px; justify-content: center; width: 100%; margin-top: 20px; }
-        .overlay-btn { padding: 12px 24px; border-radius: 9999px; font-weight: 600; color: white; background-color: #007AFF; border: none; cursor: pointer; }
-        .overlay-btn.secondary { background-color: #8E8E93; }
         
         /* Preview container */
         #photo-preview { display: none; margin-top: 10px; border-radius: 12px; overflow: hidden; justify-content: center; background: #f0f0f0; }
@@ -183,17 +175,7 @@
         </form>
     </main>
 
-    <!-- Camera Overlay -->
-    <div id="camera-overlay" class="camera-overlay">
-        <div class="camera-container">
-            <video id="camera-video" autoplay playsinline></video>
-            <div class="overlay-controls">
-                <button type="button" id="capture-btn" class="overlay-btn">Scatta</button>
-                <button type="button" id="capture-another" class="overlay-btn secondary">Scatta un'altra</button>
-                <button type="button" id="cancel-camera" class="overlay-btn secondary">Indietro</button>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Main Logic Script -->
     <script>
@@ -332,118 +314,114 @@
         });
 
         // --- Image Handling Logic ---
-        async function resizeImage(file, maxWidth = 1920, maxHeight = 1080, quality = 0.85) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => {
-                    let w = img.width, h = img.height;
-                    const aspect = w / h;
-                    if (w > maxWidth || h > maxHeight) {
-                        if (w > h) { w = maxWidth; h = w / aspect; }
-                        else { h = maxHeight; w = h * aspect; }
-                    }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = w; canvas.height = h;
-                    const ctx = canvas.getContext('2d');
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.fillRect(0, 0, w, h);
-                    ctx.drawImage(img, 0, 0, w, h);
-                    canvas.toBlob(blob => {
-                        resolve(new File([blob], file.name.replace(/\.[^/.]+$/, '.jpg'), { type: 'image/jpeg', lastModified: Date.now() }));
-                    }, 'image/jpeg', quality);
-                };
-                img.onerror = reject;
-                img.src = URL.createObjectURL(file);
-            });
-        }
-
-        // Camera & Gallery Setup
+        
+        // Camera & Gallery Setup (Logic from app2.html)
         function setupCameraButtons() {
             const cameraBtn = document.getElementById('camera-btn');
             const galleryBtn = document.getElementById('gallery-btn');
             const photoInput = document.getElementById('photo');
-            const overlay = document.getElementById('camera-overlay');
-            const videoEl = document.getElementById('camera-video');
-            const captureBtn = document.getElementById('capture-btn');
-            const cancelBtn = document.getElementById('cancel-camera');
-
-            // Gallery
-            galleryBtn.addEventListener('click', () => {
-                const tempInput = document.createElement('input');
-                tempInput.type = 'file';
-                tempInput.accept = 'image/*';
-                tempInput.onchange = (e) => handleFileSelect(e.target.files[0]);
-                tempInput.click();
-            });
-
-            // Camera
-            cameraBtn.addEventListener('click', async () => {
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                        videoEl.srcObject = stream;
-                        overlay.classList.add('active');
-                    } catch (e) {
-                        console.error("Camera overlay failed, falling back to input", e);
-                        const tempInput = document.createElement('input');
-                        tempInput.type = 'file';
-                        tempInput.accept = 'image/*';
-                        tempInput.capture = 'environment';
-                        tempInput.onchange = (e) => handleFileSelect(e.target.files[0]);
-                        tempInput.click();
-                    }
-                }
-            });
-
-            // Capture from Overlay
-            captureBtn.addEventListener('click', async () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = videoEl.videoWidth;
-                canvas.height = videoEl.videoHeight;
-                canvas.getContext('2d').drawImage(videoEl, 0, 0);
-                canvas.toBlob(async (blob) => {
-                    const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
-                    await handleFileSelect(file);
-                    stopCamera();
-                }, 'image/jpeg', 0.85);
-            });
-
-            cancelBtn.addEventListener('click', stopCamera);
-
-            function stopCamera() {
-                overlay.classList.remove('active');
-                if (videoEl.srcObject) {
-                    videoEl.srcObject.getTracks().forEach(t => t.stop());
-                    videoEl.srcObject = null;
-                }
-            }
-
-            async function handleFileSelect(file) {
-                if (!file) return;
-                statusDiv.textContent = 'Elaborazione foto...';
+            
+            if (!cameraBtn || !galleryBtn || !photoInput) return;
+            
+            // Pulsante Fotocamera - apre la fotocamera
+            cameraBtn.addEventListener('click', function() {
                 try {
-                    const processed = await resizeImage(file);
-                    const dt = new DataTransfer();
-                    dt.items.add(processed);
-                    photoInput.files = dt.files;
+                    // Crea input temporaneo per fotocamera
+                    const tempInput = document.createElement('input');
+                    tempInput.type = 'file';
+                    tempInput.accept = 'image/*';
+                    tempInput.capture = 'environment'; // Forza apertura fotocamera
+                    tempInput.style.display = 'none';
                     
-                    // Preview
-                    const preview = document.getElementById('photo-preview');
-                    preview.innerHTML = '';
-                    const img = document.createElement('img');
-                    img.src = URL.createObjectURL(processed);
-                    img.className = 'rounded-lg max-h-48 mx-auto';
-                    preview.appendChild(img);
+                    tempInput.addEventListener('change', function(e) {
+                        if (e.target.files && e.target.files[0]) {
+                            // Trasferisci il file all'input principale
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(e.target.files[0]);
+                            photoInput.files = dataTransfer.files;
+                            
+                            // Trigger change event sull'input principale
+                            photoInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            statusDiv.textContent = 'Foto acquisita dalla fotocamera';
+                            statusDiv.classList.remove('text-red-500');
+                            statusDiv.classList.add('text-green-500');
+                        }
+                        document.body.removeChild(tempInput);
+                    });
                     
-                    statusDiv.textContent = 'Foto allegata con successo';
-                    statusDiv.classList.remove('text-red-500');
-                    statusDiv.classList.add('text-green-500');
-                } catch (e) {
-                    console.error(e);
-                    statusDiv.textContent = 'Errore elaborazione foto';
+                    document.body.appendChild(tempInput);
+                    tempInput.click();
+                    
+                } catch (error) {
+                    console.error('Errore apertura fotocamera:', error);
+                    statusDiv.textContent = 'Errore nell\'apertura della fotocamera';
                     statusDiv.classList.add('text-red-500');
                 }
-            }
+            });
+            
+            // Pulsante Galleria - apre la galleria
+            galleryBtn.addEventListener('click', function() {
+                try {
+                    // Crea input temporaneo per galleria
+                    const tempInput = document.createElement('input');
+                    tempInput.type = 'file';
+                    tempInput.accept = 'image/*';
+                    // NON impostare capture per aprire galleria
+                    tempInput.style.display = 'none';
+                    
+                    tempInput.addEventListener('change', function(e) {
+                        if (e.target.files && e.target.files[0]) {
+                            // Trasferisci il file all'input principale
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(e.target.files[0]);
+                            photoInput.files = dataTransfer.files;
+                            
+                            // Trigger change event sull'input principale
+                            photoInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            statusDiv.textContent = 'Foto selezionata dalla galleria';
+                            statusDiv.classList.remove('text-red-500');
+                            statusDiv.classList.add('text-green-500');
+                        }
+                        document.body.removeChild(tempInput);
+                    });
+                    
+                    document.body.appendChild(tempInput);
+                    tempInput.click();
+                    
+                } catch (error) {
+                    console.error('Errore apertura galleria:', error);
+                    statusDiv.textContent = 'Errore nell\'apertura della galleria';
+                    statusDiv.classList.add('text-red-500');
+                }
+            });
+        }
+
+        // Anteprima immagine selezionata
+        function setupImagePreview() {
+            const photoInput = document.getElementById('photo');
+            const photoPreview = document.getElementById('photo-preview');
+
+            if (!photoInput || !photoPreview) return;
+
+            photoInput.addEventListener('change', function () {
+                photoPreview.innerHTML = '';
+
+                if (this.files && this.files[0]) {
+                    const file = this.files[0];
+                    const img = document.createElement('img');
+                    const url = URL.createObjectURL(file);
+                    img.src = url;
+                    img.alt = 'Anteprima Foto';
+                    // Mantengo le classi di stile di app3.html
+                    img.className = 'rounded-lg max-h-48 mx-auto'; 
+                    photoPreview.appendChild(img);
+
+                    img.onload = () => URL.revokeObjectURL(url);
+                    photoPreview.classList.add('active'); // Mostra il riquadro
+                } else {
+                    photoPreview.classList.remove('active'); // Nasconde il riquadro
+                }
+            });
         }
 
         // --- Form Submission ---
@@ -540,6 +518,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             populateDropdowns();
             setupCameraButtons();
+            setupImagePreview();
         });
     </script>
 </body>
